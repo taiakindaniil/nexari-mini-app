@@ -5,4 +5,10 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: '/nexari-mini-app/',
+  build: {
+    target: 'es2022'
+  },
+  esbuild: {
+    target: 'es2022'
+  }
 })
