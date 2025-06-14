@@ -34,7 +34,7 @@ function AppContent() {
 
 function App() {
   return (
-    <TonConnectUIProvider manifestUrl="./tonconnect-manifest.json">
+    <TonConnectUIProvider manifestUrl="https://taiakindaniil.github.io/nexari-mini-app/tonconnect-manifest.json">
       <GameProvider>
         <AppContent />
       </GameProvider>
