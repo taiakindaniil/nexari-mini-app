@@ -44,16 +44,16 @@ const BACKGROUND_GRADIENTS = [
 ];
 
 const INITIAL_MARKET_SKINS = [
-  { id: "skin1", character: CHARACTERS[1], background: BACKGROUND_GRADIENTS[0], price: 500, timestamp: Date.now() - 10000, isMutated: true },
-  { id: "skin2", character: CHARACTERS[2], background: BACKGROUND_GRADIENTS[1], price: 750, timestamp: Date.now() - 9000, isMutated: true },
-  { id: "skin3", character: CHARACTERS[3], background: BACKGROUND_GRADIENTS[2], price: 300, timestamp: Date.now() - 8000, isMutated: true },
-  { id: "skin4", character: CHARACTERS[4], background: BACKGROUND_GRADIENTS[3], price: 1000, timestamp: Date.now() - 7000, isMutated: true },
-  { id: "skin5", character: CHARACTERS[5], background: BACKGROUND_GRADIENTS[4], price: 600, timestamp: Date.now() - 6000, isMutated: true },
-  { id: "skin6", character: CHARACTERS[6], background: BACKGROUND_GRADIENTS[5], price: 450, timestamp: Date.now() - 5000, isMutated: true },
-  { id: "skin7", character: CHARACTERS[7], background: BACKGROUND_GRADIENTS[6], price: 800, timestamp: Date.now() - 4000, isMutated: true },
-  { id: "skin8", character: CHARACTERS[8], background: BACKGROUND_GRADIENTS[7], price: 550, timestamp: Date.now() - 3000, isMutated: true },
-  { id: "skin9", character: CHARACTERS[9], background: BACKGROUND_GRADIENTS[8], price: 700, timestamp: Date.now() - 2000, isMutated: true },
-  { id: "skin10", character: CHARACTERS[10], background: BACKGROUND_GRADIENTS[9], price: 400, timestamp: Date.now() - 1000, isMutated: true },
+  { id: "skin1", character: CHARACTERS[1], background: BACKGROUND_GRADIENTS[0], price: 500, timestamp: Date.now() - 10000 },
+  { id: "skin2", character: CHARACTERS[2], background: BACKGROUND_GRADIENTS[1], price: 750, timestamp: Date.now() - 9000 },
+  { id: "skin3", character: CHARACTERS[3], background: BACKGROUND_GRADIENTS[2], price: 300, timestamp: Date.now() - 8000 },
+  { id: "skin4", character: CHARACTERS[4], background: BACKGROUND_GRADIENTS[3], price: 1000, timestamp: Date.now() - 7000 },
+  { id: "skin5", character: CHARACTERS[5], background: BACKGROUND_GRADIENTS[4], price: 600, timestamp: Date.now() - 6000 },
+  { id: "skin6", character: CHARACTERS[6], background: BACKGROUND_GRADIENTS[5], price: 450, timestamp: Date.now() - 5000 },
+  { id: "skin7", character: CHARACTERS[7], background: BACKGROUND_GRADIENTS[6], price: 800, timestamp: Date.now() - 4000 },
+  { id: "skin8", character: CHARACTERS[8], background: BACKGROUND_GRADIENTS[7], price: 550, timestamp: Date.now() - 3000 },
+  { id: "skin9", character: CHARACTERS[9], background: BACKGROUND_GRADIENTS[8], price: 700, timestamp: Date.now() - 2000 },
+  { id: "skin10", character: CHARACTERS[10], background: BACKGROUND_GRADIENTS[9], price: 400, timestamp: Date.now() - 1000 },
 ];
 
 const Market = () => {
@@ -62,7 +62,6 @@ const Market = () => {
   const [characterFilter, setCharacterFilter] = useState('');
   const [backgroundFilter, setBackgroundFilter] = useState('');
   const [priceSort, setPriceSort] = useState('newest');
-  const [walletConnected, setWalletConnected] = useState(false);
 
   const getFilteredAndSortedSkins = () => {
     let filteredSkins = [...availableMarketSkins];
@@ -97,7 +96,6 @@ const Market = () => {
         src: skin.character.src,
         name: skin.character.name,
         background: skin.background,
-        isMutated: skin.isMutated || false,
         level: 1,
         incomeRate: 100
       });
@@ -109,95 +107,76 @@ const Market = () => {
     }
   };
 
-  const connectWallet = () => {
-    // Placeholder for wallet connection
-    setWalletConnected(true);
-  };
-
-  const disconnectWallet = () => {
-    setWalletConnected(false);
-  };
-
   const filteredSkins = getFilteredAndSortedSkins();
 
   return (
-    <div className="market-container visible">
-      <div className="market-title">Market</div>
-      
-      {!walletConnected && (
-        <div id="ton-connect" style={{ display: 'flex' }}>
-          <button onClick={connectWallet}>Connect Wallet</button>
+    <div className="market-container visible">      
+      {/* Modern Filters */}
+      <div className="market-filters">
+        <div className="filter-group">
+          <div className="filter-icon">🎭</div>
+          <select 
+            className="modern-filter-select" 
+            value={characterFilter}
+            onChange={(e) => setCharacterFilter(e.target.value)}
+          >
+            <option value="">All Characters</option>
+            {CHARACTERS.map(char => (
+              <option key={char.name} value={char.name}>{char.name}</option>
+            ))}
+          </select>
         </div>
-      )}
-      
-      {walletConnected && (
-        <button id="disconnect-wallet" onClick={disconnectWallet}>
-          Disconnect Wallet
-        </button>
-      )}
 
-      <div className="filters-container">
-        <select 
-          className="filter-select" 
-          value={characterFilter}
-          onChange={(e) => setCharacterFilter(e.target.value)}
-        >
-          <option value="">All Characters</option>
-          {CHARACTERS.map(char => (
-            <option key={char.name} value={char.name}>{char.name}</option>
-          ))}
-        </select>
+        <div className="filter-group">
+          <div className="filter-icon">🎨</div>
+          <select 
+            className="modern-filter-select"
+            value={backgroundFilter}
+            onChange={(e) => setBackgroundFilter(e.target.value)}
+          >
+            <option value="">All Backgrounds</option>
+            {BACKGROUND_GRADIENTS.map((bg, index) => (
+              <option key={bg} value={bg}>Style {index + 1}</option>
+            ))}
+          </select>
+        </div>
 
-        <select 
-          className="filter-select"
-          value={backgroundFilter}
-          onChange={(e) => setBackgroundFilter(e.target.value)}
-        >
-          <option value="">All Backgrounds</option>
-          {BACKGROUND_GRADIENTS.map((bg, index) => (
-            <option key={bg} value={bg}>Background {index + 1}</option>
-          ))}
-        </select>
-
-        <select 
-          className="sort-select"
-          value={priceSort}
-          onChange={(e) => setPriceSort(e.target.value)}
-        >
-          <option value="newest">Newest First</option>
-          <option value="price-desc">Price: High to Low</option>
-          <option value="price-asc">Price: Low to High</option>
-        </select>
+        <div className="filter-group">
+          <div className="filter-icon">📊</div>
+          <select 
+            className="modern-filter-select"
+            value={priceSort}
+            onChange={(e) => setPriceSort(e.target.value)}
+          >
+            <option value="newest">Newest First</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="price-asc">Price: Low to High</option>
+          </select>
+        </div>
       </div>
 
-      <div className="market-items-container">
+      {/* Market Items Grid */}
+      <div className="market-grid">
         {filteredSkins.map(skin => (
           <div 
             key={skin.id} 
-            className="market-item-container"
-            style={{
-              background: skin.background,
-              boxShadow: '0 0 10px rgba(255,255,255,0.3)',
-              minHeight: '200px'
-            }}
+            className="market-item"
+            style={{ background: skin.background }}
           >
             <img 
               src={skin.character.src} 
               alt={skin.character.name} 
-              className={`market-image${skin.isMutated ? ' mutated' : ''}`}
+              className="market-item-image"
             />
-            <div className="market-name">{skin.character.name}</div>
-            <div className="market-price">
-              <span>{skin.price}</span>
+            <div className="market-item-name">{skin.character.name}</div>
+            <button className="market-buy-button" onClick={() => handleBuy(skin)}>
+              <span>Buy for {skin.price}</span>
               <img 
                 src="https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp" 
                 alt="Gem Stone" 
-                className="gem-icon"
+                className="button-gem-icon"
               />
-            </div>
-            <div className="buy-button" onClick={() => handleBuy(skin)}>
-              Buy
-            </div>
+            </button>
           </div>
         ))}
       </div>

@@ -3,7 +3,7 @@ import { useGame } from '../context/GameContext';
 
 export default function Quests() {
   const { coins, addCoins, playerData } = useGame();
-  const [showingFriends, setShowingFriends] = useState(false);
+  const [activeTab, setActiveTab] = useState('quests'); // 'quests' or 'friends'
   const [questsCompleted, setQuestsCompleted] = useState({
     telegram: false,
     clicks: false,
@@ -18,6 +18,10 @@ export default function Quests() {
     leaderboard: false,
     diamonds: false
   });
+
+  const handleTabSwitch = (tab) => {
+    setActiveTab(tab);
+  };
 
   const quests = [
     {
@@ -116,122 +120,145 @@ export default function Quests() {
     });
   };
 
-  const toggleView = () => {
-    setShowingFriends(!showingFriends);
-  };
-
-  if (showingFriends) {
-    return (
-      <div className="leaderboard-container visible">
-        <div className="leaderboard-title">Friends</div>
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          gap: '1rem', 
-          padding: '1rem' 
-        }}>
-          <button 
-            onClick={copyInviteLink}
-            style={{
-              padding: '0.5rem 1rem',
-              background: '#fff',
-              color: '#000',
-              borderRadius: '12px',
-              fontWeight: '600',
-              border: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            Copy Invite Link
-          </button>
-          <div style={{ 
-            fontSize: '1.2rem', 
-            color: '#0ff', 
-            fontWeight: 'bold',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}>
-            +200 
-            <img 
-              src="https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp" 
-              style={{ width: '20px', height: '20px' }}
-              alt="Diamond"
-            />
-          </div>
-          <div style={{ color: '#888' }}>No friends yet</div>
-        </div>
-        
-        {/* Navigation arrows */}
-        <div className="quests-arrow left" onClick={toggleView}>
-          &lt;
-        </div>
-        <div className="quests-arrow right" onClick={toggleView}>
-          &gt;
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="leaderboard-container visible">
-      <div className="leaderboard-title">Quests</div>
-      <div className="leaderboard-table-container" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-        {quests.map((quest) => (
-          <div key={quest.id} className="case-container">
-            <img className="case-image" src={quest.icon} alt={quest.title} />
-            <div className="case-name">
-              {quest.id === 'telegram' ? (
-                <>
-                  Subscribe to our{' '}
-                  <a 
-                    href={quest.link}
-                    onClick={handleTelegramClick}
-                    style={{ color: '#4fc3f7', textDecoration: 'none' }}
-                    target="_blank"
-                    rel="noopener noreferrer"
+    <div className="shop-container visible">
+      {/* Tab Switcher */}
+      <div className="tab-switcher">
+        <button 
+          className={`tab-button ${activeTab === 'quests' ? 'active' : ''}`}
+          onClick={() => handleTabSwitch('quests')}
+        >
+          <span className="tab-icon">🎯</span>
+          Quests
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'friends' ? 'active' : ''}`}
+          onClick={() => handleTabSwitch('friends')}
+        >
+          <span className="tab-icon">👥</span>
+          Friends
+        </button>
+      </div>
+
+      {/* Quests Content */}
+      {activeTab === 'quests' && (
+        <div className="cases-content">
+          <div className="cases-grid">
+            {quests.map((quest) => (
+              <div key={quest.id} className="case-container">
+                <img className="case-image" src={quest.icon} alt={quest.title} />
+                <div className="case-name">
+                  {quest.id === 'telegram' ? (
+                    <>
+                      Subscribe to our{' '}
+                      <a 
+                        href={quest.link}
+                        onClick={handleTelegramClick}
+                        style={{ color: '#4fc3f7', textDecoration: 'none' }}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Telegram
+                      </a>
+                    </>
+                  ) : (
+                    quest.title
+                  )}
+                </div>
+                <div className="case-price">
+                  <button 
+                    className={`quest-claim-button ${
+                      questsClaimed[quest.id] 
+                        ? 'claimed' 
+                        : questsCompleted[quest.id] 
+                          ? 'ready' 
+                          : 'locked'
+                    }`}
+                    disabled={!questsCompleted[quest.id] || questsClaimed[quest.id]}
+                    onClick={() => handleClaimReward(quest.id, quest.reward)}
                   >
-                    Telegram
-                  </a>
-                </>
-              ) : (
-                quest.title
-              )}
+                    {questsClaimed[quest.id] ? (
+                      <>
+                        <span className="button-icon">✓</span>
+                        Claimed
+                      </>
+                    ) : (
+                      <>
+                        <span className="button-icon">💎</span>
+                        Claim {quest.reward}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Friends Content */}
+      {activeTab === 'friends' && (
+        <div className="inventory-content">
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            gap: '1rem', 
+            padding: '2rem 1rem',
+            minHeight: '300px',
+            justifyContent: 'center'
+          }}>
+            <div style={{ 
+              fontSize: '3rem', 
+              marginBottom: '1rem' 
+            }}>
+              👥
             </div>
-            <div className="case-price">
-              <button 
-                className={`claim-button ${questsCompleted[quest.id] && !questsClaimed[quest.id] ? 'pulse' : ''}`}
-                disabled={!questsCompleted[quest.id] || questsClaimed[quest.id]}
-                onClick={() => handleClaimReward(quest.id, quest.reward)}
-                style={{
-                  opacity: questsClaimed[quest.id] ? 0.5 : 1,
-                  cursor: questsClaimed[quest.id] ? 'not-allowed' : 'pointer'
-                }}
-              >
-                {questsClaimed[quest.id] ? 'Claimed' : (
-                  <>
-                    Claim {quest.reward}{' '}
-                    <img 
-                      src="https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp" 
-                      style={{ width: '16px', height: '16px' }}
-                      alt="Diamond"
-                    />
-                  </>
-                )}
-              </button>
+            <button 
+              onClick={copyInviteLink}
+              style={{
+                padding: '0.75rem 1.5rem',
+                background: '#fff',
+                color: '#000',
+                borderRadius: '12px',
+                fontWeight: '600',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '1rem'
+              }}
+            >
+              Copy Invite Link
+            </button>
+            <div style={{ 
+              fontSize: '1.2rem', 
+              color: '#0ff', 
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              background: 'rgba(0, 255, 255, 0.1)',
+              padding: '0.5rem 1rem',
+              borderRadius: '8px'
+            }}>
+              +200 
+              <img 
+                src="https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp" 
+                style={{ width: '20px', height: '20px' }}
+                alt="Diamond"
+              />
+              per friend
+            </div>
+            <div style={{ 
+              color: '#888',
+              textAlign: 'center',
+              fontSize: '0.9rem'
+            }}>
+              No friends yet<br/>
+              Invite friends to earn diamonds!
             </div>
           </div>
-        ))}
-      </div>
-      
-      {/* Navigation arrows */}
-      <div className="quests-arrow left" onClick={toggleView}>
-        &lt;
-      </div>
-      <div className="quests-arrow right" onClick={toggleView}>
-        &gt;
-      </div>
+        </div>
+      )}
     </div>
   );
 } 
