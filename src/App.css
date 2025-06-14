@@ -1118,10 +1118,6 @@ main {
     .market-container {
         width: 100vw;
         height: 100vh;
-        padding-top: 5rem;
-        padding-bottom: 6rem;
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
     }
 
     .tab-switcher {
@@ -1195,7 +1191,7 @@ main {
     .cases-grid {
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
         gap: 1rem;
-        padding: 1.5rem;
+        padding: 1rem;
         flex: 1;
         overflow-y: auto;
     }
