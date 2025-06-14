@@ -34,7 +34,7 @@ function AppContent() {
 
 function App() {
   return (
-    <TonConnectUIProvider manifestUrl="/tonconnect-manifest.json">
+    <TonConnectUIProvider manifestUrl="./tonconnect-manifest.json">
       <GameProvider>
         <AppContent />
       </GameProvider>
