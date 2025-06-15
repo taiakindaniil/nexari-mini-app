@@ -1076,11 +1076,17 @@ main {
         padding: 0.4rem 0.8rem;
     }
 
+    /* Hide old income counter on mobile in favor of new mining display */
     .income-counter {
-        font-size: 1rem;
-        padding: 0.5rem 1rem;
-        top: 6.5rem;
-        gap: 0.4rem;
+        display: none;
+    }
+    
+    .income-timer {
+        display: none;
+    }
+    
+    .coin-counter {
+        display: none;
     }
 
     .coin-icon {
@@ -1092,6 +1098,10 @@ main {
     .character {
         width: 140px;
         height: 140px;
+    }
+    
+    .character-container {
+        top: 65%;
     }
 
     .footer-menu-container {
@@ -1533,8 +1543,6 @@ main {
     background: rgba(255, 255, 255, 0.1);
     padding: 8px;
 }
-
-
 
 .market-item:hover .market-item-image {
     transform: scale(1.1);
@@ -2420,5 +2428,448 @@ main {
     padding: 0.5rem 1rem;
     font-size: 0.8rem;
     min-width: 100px;
+  }
+}
+
+/* New Mining Display Styles */
+.mining-display {
+  position: fixed;
+  top: 6rem;
+  left: 1rem;
+  right: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  z-index: 10;
+}
+
+.mining-rate {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: gentle-glow 3s ease-in-out infinite alternate;
+}
+
+.mining-icon {
+  font-size: 2rem;
+  margin-right: 1rem;
+  animation: diamond-sparkle 2s ease-in-out infinite;
+}
+
+.mining-info {
+  flex: 1;
+}
+
+.mining-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.mining-label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+
+.mining-timer {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 16px;
+  padding: 1rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.timer-active {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.timer-icon {
+  font-size: 1.5rem;
+  margin-right: 1rem;
+}
+
+.timer-info {
+  flex: 1;
+}
+
+.timer-value {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.timer-label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.boost-button {
+  background: linear-gradient(135deg, #ffd700, #ffb347);
+  border: none;
+  border-radius: 12px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.3);
+}
+
+.boost-button:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+}
+
+.timer-inactive {
+  text-align: center;
+}
+
+.start-message {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1rem;
+  font-weight: 500;
+  animation: pulse-text 2s ease-in-out infinite;
+}
+
+/* Balance Section */
+.balance-section {
+  position: fixed;
+  top: 6rem;
+  right: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  z-index: 10;
+}
+
+.balance-display {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 8px 32px rgba(79, 172, 254, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.balance-icon {
+  font-size: 2rem;
+  margin-right: 0.8rem;
+  animation: diamond-sparkle 2s ease-in-out infinite;
+}
+
+.balance-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Claim Button */
+.claim-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  border: none;
+  border-radius: 16px;
+  padding: 1rem 1.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 32px rgba(238, 90, 36, 0.3);
+  animation: claim-pulse 2s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+.claim-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s;
+}
+
+.claim-button:hover::before {
+  left: 100%;
+}
+
+.claim-button:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 12px 40px rgba(238, 90, 36, 0.4);
+}
+
+.claim-button:disabled,
+.claim-button.loading {
+  opacity: 0.8;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.claim-button.loading {
+  animation: none;
+}
+
+.claim-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.claim-icon {
+  font-size: 1.2rem;
+  animation: diamond-sparkle 1.5s ease-in-out infinite;
+}
+
+/* Stars Display */
+.stars-display {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 12px;
+  padding: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stars-display:hover {
+  background: rgba(0, 0, 0, 0.8);
+  transform: scale(1.05);
+}
+
+.stars-icon {
+  font-size: 1.5rem;
+  margin-right: 0.5rem;
+}
+
+.stars-value {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* Character Wrapper and Mining Effects */
+.character-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.mining-effect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.mining-particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: linear-gradient(45deg, #ffd700, #fff);
+  border-radius: 50%;
+  animation: mining-float 3s ease-in-out infinite;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+}
+
+.mining-particle:nth-child(1) {
+  top: 20%;
+  left: 20%;
+  animation-delay: 0s;
+}
+
+.mining-particle:nth-child(2) {
+  top: 30%;
+  right: 20%;
+  animation-delay: 1s;
+}
+
+.mining-particle:nth-child(3) {
+  bottom: 30%;
+  left: 30%;
+  animation-delay: 2s;
+}
+
+/* Loading and Error States */
+.loading-state,
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  text-align: center;
+  padding: 2rem;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+.error-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.retry-button {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: none;
+  border-radius: 12px;
+  padding: 0.8rem 2rem;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 1rem;
+}
+
+.retry-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+/* Debug Info */
+.debug-info {
+  position: fixed;
+  bottom: 100px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 10px;
+  font-size: 12px;
+  border-radius: 8px;
+  max-width: 200px;
+  backdrop-filter: blur(10px);
+}
+
+/* Animations */
+@keyframes diamond-sparkle {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.1) rotate(5deg); }
+}
+
+@keyframes gentle-glow {
+  0% { box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3); }
+  100% { box-shadow: 0 12px 40px rgba(102, 126, 234, 0.5); }
+}
+
+@keyframes claim-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+@keyframes pulse-text {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+@keyframes mining-float {
+  0%, 100% { 
+    transform: translateY(0px) scale(1);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  50% { 
+    transform: translateY(-30px) scale(1.2);
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Mobile Responsive for New Mining Display */
+@media (max-width: 600px) {
+  .mining-display {
+    top: 4.5rem;
+    left: 0.5rem;
+    right: 0.5rem;
+    gap: 0.8rem;
+  }
+  
+  .balance-section {
+    top: 13rem;
+    right: 0.5rem;
+    left: 0.5rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.8rem;
+  }
+  
+  .mining-rate,
+  .balance-display {
+    padding: 0.8rem;
+  }
+  
+  .mining-value,
+  .balance-value {
+    font-size: 1.3rem;
+  }
+  
+  .mining-label,
+  .timer-label {
+    font-size: 0.8rem;
+  }
+  
+  .mining-timer {
+    padding: 0.8rem;
+  }
+  
+  .timer-value {
+    font-size: 1.1rem;
+  }
+  
+  .claim-button {
+    padding: 0.8rem 1rem;
+    font-size: 0.9rem;
+    width: 100%;
+  }
+  
+  .stars-display {
+    padding: 0.6rem;
+    justify-content: center;
+  }
+  
+  .boost-button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
   }
 }

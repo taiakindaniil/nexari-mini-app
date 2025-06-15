@@ -17,6 +17,7 @@ export default function Home() {
   
   const [characterScale, setCharacterScale] = useState(1);
   const [scaleTimeout, setScaleTimeout] = useState(null);
+  const [claimLoading, setClaimLoading] = useState(false);
 
   // Format time display
   const formatTime = (seconds) => {
@@ -48,9 +49,10 @@ export default function Home() {
   };
 
   const handleClaimClick = async () => {
-    if (!gameStatus?.pending_diamonds || gameStatus.pending_diamonds <= 0) return;
+    if (!gameStatus?.pending_diamonds || gameStatus.pending_diamonds <= 0 || claimLoading) return;
     
     try {
+      setClaimLoading(true);
       const result = await claimDiamonds();
       if (result.success) {
         // Show success message or animation
@@ -58,6 +60,8 @@ export default function Home() {
       }
     } catch (error) {
       alert(`Failed to claim diamonds: ${error.message}`);
+    } finally {
+      setClaimLoading(false);
     }
   };
 
@@ -73,7 +77,8 @@ export default function Home() {
   if (loading && !gameStatus) {
     return (
       <div className="home-content">
-        <div style={{ textAlign: 'center', padding: '50px' }}>
+        <div className="loading-state">
+          <div className="loading-spinner"></div>
           <p>Loading game data...</p>
         </div>
       </div>
@@ -84,9 +89,12 @@ export default function Home() {
   if (error && !gameStatus) {
     return (
       <div className="home-content">
-        <div style={{ textAlign: 'center', padding: '50px' }}>
+        <div className="error-state">
+          <div className="error-icon">⚠️</div>
           <p>Error loading game data: {error}</p>
-          <button onClick={() => window.location.reload()}>Retry</button>
+          <button className="retry-button" onClick={() => window.location.reload()}>
+            Retry
+          </button>
         </div>
       </div>
     );
@@ -94,68 +102,99 @@ export default function Home() {
 
   return (
     <div className="home-content">
-      <div className="income-counter">
-        <span>{gameStatus?.income_rate || 0}</span> Diamonds/h
-        <img alt="Gem Stone" className="gem-icon" src="https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp" />
-      </div>
-      
-      <div className="income-timer">
-        {gameStatus?.farming_active ? (
-          <>
-            <span>{formatTime(gameStatus.time_remaining)}</span>
-            <span 
-              onClick={handleX4Click}
-              style={{marginLeft: 8, fontWeight: 'bold', color: 'gold', cursor: 'pointer'}}
-            >
-              x4
-            </span>
-          </>
-        ) : (
-          <span>Click character to start farming!</span>
-        )}
-      </div>
-      
-      <div className="coin-counter visible">
-        <span>{Math.floor(gameStatus?.diamonds_balance || 0)}</span>
-        <img alt="Gem Stone" className="coin-icon" src="https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp" />
+      {/* Mining Rate Display */}
+      <div className="mining-display">
+        <div className="mining-rate">
+          <div className="mining-icon">💎</div>
+          <div className="mining-info">
+            <div className="mining-value">{gameStatus?.income_rate || 0}</div>
+            <div className="mining-label">Diamonds/hour</div>
+          </div>
+        </div>
         
-        {/* Claim button for pending diamonds */}
-        {gameStatus?.pending_diamonds > 0 && (
-          <button 
-            onClick={handleClaimClick}
-            style={{
-              marginLeft: '10px',
-              padding: '5px 10px',
-              backgroundColor: 'gold',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              fontSize: '12px'
-            }}
-          >
-            Claim +{gameStatus.pending_diamonds}
-          </button>
-        )}
-        
-        <div className="donation-line" onClick={handleStarDonationClick} style={{cursor: 'pointer'}}>
-          <span>{stars}</span>
-          <img alt="Star" src="https://em-content.zobj.net/source/telegram/386/star_2b50.webp" style={{width: 24, height: 24, verticalAlign: 'middle'}} />
+        {/* Mining Timer */}
+        <div className="mining-timer">
+          {gameStatus?.farming_active ? (
+            <div className="timer-active">
+              <div className="timer-icon">⏱️</div>
+              <div className="timer-info">
+                <div className="timer-value">{formatTime(gameStatus.time_remaining)}</div>
+                <div className="timer-label">Time remaining</div>
+              </div>
+              <button 
+                className="boost-button"
+                onClick={handleX4Click}
+                title="4x boost upgrade"
+              >
+                ⚡ x4
+              </button>
+            </div>
+          ) : (
+            <div className="timer-inactive">
+              <div className="start-message">Click character to start mining!</div>
+            </div>
+          )}
         </div>
       </div>
       
+      {/* Balance and Claim Section */}
+      <div className="balance-section">
+        <div className="balance-display">
+          <div className="balance-icon">💎</div>
+          <div className="balance-value">{Math.floor(gameStatus?.diamonds_balance || 0)}</div>
+        </div>
+        
+        {/* Claim Button */}
+        {gameStatus?.pending_diamonds > 0 && (
+          <button 
+            className={`claim-button ${claimLoading ? 'loading' : ''}`}
+            onClick={handleClaimClick}
+            disabled={claimLoading}
+          >
+            {claimLoading ? (
+              <>
+                <div className="claim-spinner"></div>
+                <span>Claiming...</span>
+              </>
+            ) : (
+              <>
+                <span>Claim +{gameStatus.pending_diamonds}</span>
+                <div className="claim-icon">💎</div>
+              </>
+            )}
+          </button>
+        )}
+        
+        {/* Stars Display */}
+        <div className="stars-display" onClick={handleStarDonationClick}>
+          <div className="stars-icon">⭐</div>
+          <div className="stars-value">{stars}</div>
+        </div>
+      </div>
+      
+      {/* Character Container */}
       <div className="character-container">
         {gameStatus?.active_character ? (
-          <img 
-            alt={gameStatus.active_character.name} 
-            className="character" 
-            src={gameStatus.active_character.image_url}
-            onClick={handleCharacterClick}
-            style={{
-              transform: `scale(${characterScale})`,
-              transition: 'transform 0.3s ease'
-            }}
-            title={`${gameStatus.active_character.name} (Level ${gameStatus.active_character.level})`}
-          />
+          <div className="character-wrapper">
+            <img 
+              alt={gameStatus.active_character.name} 
+              className="character" 
+              src={gameStatus.active_character.image_url}
+              onClick={handleCharacterClick}
+              style={{
+                transform: `scale(${characterScale})`,
+                transition: 'transform 0.3s ease'
+              }}
+              title={`${gameStatus.active_character.name} (Level ${gameStatus.active_character.level})`}
+            />
+            {gameStatus.farming_active && (
+              <div className="mining-effect">
+                <div className="mining-particle"></div>
+                <div className="mining-particle"></div>
+                <div className="mining-particle"></div>
+              </div>
+            )}
+          </div>
         ) : (
           <div 
             className="character placeholder"
@@ -181,17 +220,7 @@ export default function Home() {
       
       {/* Debug info in development */}
       {import.meta.env.DEV && gameStatus && (
-        <div style={{ 
-          position: 'fixed', 
-          bottom: '100px', 
-          left: '10px', 
-          backgroundColor: 'rgba(0,0,0,0.8)', 
-          color: 'white', 
-          padding: '10px', 
-          fontSize: '12px',
-          borderRadius: '5px',
-          maxWidth: '200px'
-        }}>
+        <div className="debug-info">
           <div>Farming: {gameStatus.farming_active ? 'Active' : 'Inactive'}</div>
           <div>Pending: {gameStatus.pending_diamonds}</div>
           {loading && <div>Loading...</div>}
