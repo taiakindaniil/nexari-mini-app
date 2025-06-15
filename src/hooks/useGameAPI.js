@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { gameAPI } from '../api/gameApi';
+import { useApi } from '../api/hooks/useApi';
 
 export const useGameAPI = () => {
+  const api = useApi();
   const [gameStatus, setGameStatus] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -11,7 +12,7 @@ export const useGameAPI = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await gameAPI.getGameStatus();
+      const response = await api.game.getStatus();
       if (response.success) {
         setGameStatus(response.data);
       }
@@ -21,14 +22,14 @@ export const useGameAPI = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [api]);
 
   // Start farming
   const startFarming = useCallback(async (characterId = null) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await gameAPI.startFarming(characterId);
+      const response = await api.game.startFarming(characterId);
       if (response.success) {
         await fetchGameStatus(); // Refresh status
         return response;
@@ -40,14 +41,14 @@ export const useGameAPI = () => {
     } finally {
       setLoading(false);
     }
-  }, [fetchGameStatus]);
+  }, [api, fetchGameStatus]);
 
   // Claim diamonds
   const claimDiamonds = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await gameAPI.claimDiamonds();
+      const response = await api.game.claimDiamonds();
       if (response.success) {
         await fetchGameStatus(); // Refresh status
         return response;
@@ -59,12 +60,12 @@ export const useGameAPI = () => {
     } finally {
       setLoading(false);
     }
-  }, [fetchGameStatus]);
+  }, [api, fetchGameStatus]);
 
   // Increment clicks
   const incrementClicks = useCallback(async () => {
     try {
-      const response = await gameAPI.incrementClicks();
+      const response = await api.game.incrementClicks();
       if (response.success) {
         // Update local state without full refresh for better UX
         setGameStatus(prev => prev ? {
@@ -77,7 +78,7 @@ export const useGameAPI = () => {
       console.error('Failed to increment clicks:', err);
       // Don't throw error for clicks as it's not critical
     }
-  }, []);
+  }, [api]);
 
   // Initialize game status on mount
   useEffect(() => {

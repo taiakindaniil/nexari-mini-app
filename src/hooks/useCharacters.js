@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { gameAPI } from '../api/gameApi';
+import { useApi } from '../api/hooks/useApi';
 
 export const useCharacters = () => {
+  const api = useApi();
   const [shopCharacters, setShopCharacters] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -12,7 +13,7 @@ export const useCharacters = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await gameAPI.getShopCharacters();
+      const response = await api.character.getShopCharacters();
       if (response.success) {
         setShopCharacters(response.characters);
       }
@@ -22,14 +23,14 @@ export const useCharacters = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [api]);
 
   // Fetch user inventory
   const fetchInventory = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await gameAPI.getUserInventory();
+      const response = await api.character.getUserInventory();
       if (response.success) {
         setInventory(response.inventory);
       }
@@ -39,14 +40,14 @@ export const useCharacters = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [api]);
 
   // Purchase character
   const purchaseCharacter = useCallback(async (characterId) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await gameAPI.purchaseCharacter(characterId);
+      const response = await api.character.purchaseCharacter(characterId);
       if (response.success) {
         await fetchInventory(); // Refresh inventory
         return response;
@@ -58,14 +59,14 @@ export const useCharacters = () => {
     } finally {
       setLoading(false);
     }
-  }, [fetchInventory]);
+  }, [api, fetchInventory]);
 
   // Upgrade character
   const upgradeCharacter = useCallback(async (userCharacterId) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await gameAPI.upgradeCharacter(userCharacterId);
+      const response = await api.character.upgradeCharacter(userCharacterId);
       if (response.success) {
         await fetchInventory(); // Refresh inventory
         return response;
@@ -77,14 +78,14 @@ export const useCharacters = () => {
     } finally {
       setLoading(false);
     }
-  }, [fetchInventory]);
+  }, [api, fetchInventory]);
 
   // Set active character
   const setActiveCharacter = useCallback(async (userCharacterId) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await gameAPI.setActiveCharacter(userCharacterId);
+      const response = await api.character.setActiveCharacter(userCharacterId);
       if (response.success) {
         await fetchInventory(); // Refresh inventory
         return response;
@@ -96,12 +97,12 @@ export const useCharacters = () => {
     } finally {
       setLoading(false);
     }
-  }, [fetchInventory]);
+  }, [api, fetchInventory]);
 
   // Get character details
   const getCharacterDetails = useCallback(async (userCharacterId) => {
     try {
-      const response = await gameAPI.getCharacterDetails(userCharacterId);
+      const response = await api.character.getCharacterDetails(userCharacterId);
       if (response.success) {
         return response.character;
       }
@@ -109,7 +110,7 @@ export const useCharacters = () => {
       console.error('Failed to get character details:', err);
       throw err;
     }
-  }, []);
+  }, [api]);
 
   // Initialize data on mount
   useEffect(() => {
