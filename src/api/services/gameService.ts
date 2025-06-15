@@ -1,4 +1,4 @@
-import apiClient from '../apiClient';
+import { apiClient } from '../apiClient';
 
 export interface GameStatus {
   diamonds_balance: number;
@@ -7,13 +7,13 @@ export interface GameStatus {
   farming_active: boolean;
   time_remaining: number;
   total_clicks: number;
-  active_character?: {
+  active_character: {
     id: number;
     name: string;
     level: number;
     image_url: string;
     income_rate: number;
-  };
+  } | null;
 }
 
 export interface StartFarmingRequest {
@@ -39,6 +39,11 @@ export interface ClaimDiamondsResponse {
 export interface ClickResponse {
   success: boolean;
   total_clicks: number;
+  added_clicks?: number;
+}
+
+export interface BatchClicksRequest {
+  count: number;
 }
 
 export interface GameStatusResponse {
@@ -54,36 +59,40 @@ class GameService {
    * Get current game status for user
    */
   async getStatus(): Promise<GameStatusResponse> {
-    const { data } = await apiClient.get<GameStatusResponse>('/game/status');
-    return data;
+    const response = await apiClient.get('/game/status');
+    return response.data;
   }
 
   /**
    * Start farming with selected character
    */
   async startFarming(characterId?: number): Promise<StartFarmingResponse> {
-    const { data } = await apiClient.post<StartFarmingResponse>('/game/start-farming', {
-      character_id: characterId,
+    const response = await apiClient.post('/game/start-farming', {
+      character_id: characterId
     });
-    return data;
+    return response.data;
   }
 
   /**
    * Claim accumulated diamonds
    */
   async claimDiamonds(): Promise<ClaimDiamondsResponse> {
-    const { data } = await apiClient.post<ClaimDiamondsResponse>('/game/claim-diamonds');
-    return data;
+    const response = await apiClient.post('/game/claim-diamonds');
+    return response.data;
   }
 
   /**
    * Increment click counter for quests
    */
   async incrementClicks(): Promise<ClickResponse> {
-    const { data } = await apiClient.post<ClickResponse>('/game/click');
-    return data;
+    const response = await apiClient.post('/game/click');
+    return response.data;
+  }
+
+  async batchIncrementClicks(count: number): Promise<ClickResponse> {
+    const response = await apiClient.post('/game/clicks', { count });
+    return response.data;
   }
 }
 
-export const gameService = new GameService();
-export default gameService;
+export default new GameService();
