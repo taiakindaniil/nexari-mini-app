@@ -1,19 +1,15 @@
 import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
-import { useGameAPI } from '../hooks/useGameAPI';
 
 export default function Home() {
   const { 
-    stars
-  } = useGame();
-  
-  const { 
+    stars,
     gameStatus, 
     loading, 
     error, 
     startFarming, 
     claimDiamonds 
-  } = useGameAPI();
+  } = useGame();
   
   const [characterScale, setCharacterScale] = useState(1);
   const [scaleTimeout, setScaleTimeout] = useState(null);

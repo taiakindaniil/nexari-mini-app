@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useTelegramUser } from '../hooks/useTelegramUser.ts';
+import { useApi } from '../api/hooks/useApi';
 
 const GameContext = createContext();
 
@@ -13,6 +14,9 @@ export const useGame = () => {
 
 export const GameProvider = ({ children }) => {
   const telegramUser = useTelegramUser();
+  const api = useApi();
+  
+  // Legacy state (keep for compatibility)
   const [coins, setCoins] = useState(8000);
   const [totalCoins, setTotalCoins] = useState(8000);
   const [stars, setStars] = useState(0);
@@ -21,6 +25,11 @@ export const GameProvider = ({ children }) => {
   const [timerDisplay, setTimerDisplay] = useState('00:00');
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [nextIncomeTime, setNextIncomeTime] = useState(0);
+  
+  // New API state
+  const [gameStatus, setGameStatus] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   
   // Player data with Telegram integration
   const [player, setPlayer] = useState({
@@ -42,9 +51,6 @@ export const GameProvider = ({ children }) => {
       }));
     }
   }, [telegramUser]);
-
-  // Quest tracking
-
 
   // Character data
   const [selectedCharacter, setSelectedCharacter] = useState({
@@ -69,7 +75,70 @@ export const GameProvider = ({ children }) => {
     { nickname: "CryptoStar", coins: 200, rank: 5 },
   ]);
 
+  // API Functions
+  const fetchGameStatus = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await api.game.getStatus();
+      if (response.success) {
+        setGameStatus(response.data);
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error('Failed to fetch game status:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const startFarming = async (characterId = null) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await api.game.startFarming(characterId);
+      if (response.success) {
+        await fetchGameStatus(); // Refresh status
+        return response;
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error('Failed to start farming:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const claimDiamonds = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await api.game.claimDiamonds();
+      if (response.success) {
+        await fetchGameStatus(); // Refresh status
+        return response;
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error('Failed to claim diamonds:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initialize game status on mount
+  useEffect(() => {
+    fetchGameStatus();
+  }, []);
+
+  // Refresh game status every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(fetchGameStatus, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Initialize inventory with default character
   useEffect(() => {
@@ -204,12 +273,8 @@ export const GameProvider = ({ children }) => {
     return false;
   };
 
-
-
-
-
   const value = {
-    // State
+    // Legacy state
     coins,
     totalCoins,
     stars,
@@ -227,6 +292,11 @@ export const GameProvider = ({ children }) => {
     characters,
     leaderboard,
     
+    // New API state
+    gameStatus,
+    loading,
+    error,
+    
     // Actions
     setCoins,
     setStars,
@@ -238,7 +308,12 @@ export const GameProvider = ({ children }) => {
     setSelectedCharacter,
     addToInventory,
     upgradeCharacter,
-    updateLeaderboard
+    updateLeaderboard,
+    
+    // API Actions
+    fetchGameStatus,
+    startFarming,
+    claimDiamonds,
   };
 
   return (

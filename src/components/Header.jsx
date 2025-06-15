@@ -1,12 +1,10 @@
 import React from 'react';
 import { useGame } from '../context/GameContext';
-import { useGameAPI } from '../hooks/useGameAPI';
 import { TonConnectButton } from '@tonconnect/ui-react';
 import { useTonConnect } from '../hooks/useTonConnect';
 
 export default function Header() {
-  const { player } = useGame();
-  const { gameStatus } = useGameAPI();
+  const { player, gameStatus } = useGame();
   
   // Инициализируем хук для работы с кошельком (логика работает в фоне)
   useTonConnect();
