@@ -8,7 +8,15 @@ export default function Header() {
   return (
     <header className="top-menu">
       <div className="top-menu-left">
-        <img alt="Player Avatar" className="player-avatar" src={player.avatar} />
+        <img 
+          alt="Player Avatar" 
+          className="player-avatar" 
+          src={player.avatar} 
+          onError={(e) => {
+            console.log('Avatar loading error, using fallback');
+            e.target.src = 'https://placehold.co/40x40';
+          }}
+        />
         <div className="player-info">
           <span className="player-nickname">{player.nickname}</span>
           <span className="player-max-coins">

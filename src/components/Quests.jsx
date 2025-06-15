@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useGame } from '../context/GameContext';
 
 export default function Quests() {
-  const { coins, addCoins, playerData } = useGame();
+  const { coins, addCoins, playerData, player } = useGame();
   const [activeTab, setActiveTab] = useState('quests'); // 'quests' or 'friends'
   const [questsCompleted, setQuestsCompleted] = useState({
     telegram: false,
@@ -114,7 +114,9 @@ export default function Quests() {
   };
 
   const copyInviteLink = () => {
-    const inviteLink = 'https://t.me/nexari_bot?start=ref123';
+    // Используем username или telegramId из данных Telegram пользователя
+    const referralCode = player.username || player.telegramId || 'ref123';
+    const inviteLink = `https://t.me/nexari_bot?start=ref_${referralCode}`;
     navigator.clipboard.writeText(inviteLink).then(() => {
       showNotification('Ссылка скопирована');
     });

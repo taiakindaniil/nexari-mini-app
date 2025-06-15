@@ -8,6 +8,7 @@ import Games from './components/Games';
 import { GameProvider, useGame } from './context/GameContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import TelegramSync from './components/TelegramSync';
 import { TonConnectUIProvider } from '@tonconnect/ui-react';
 
 function AppContent() {
@@ -19,6 +20,7 @@ function AppContent() {
 
   return (
     <div className="App">
+      <TelegramSync />
       <Header />
       
       {currentScreen === 'home' && <Home />}

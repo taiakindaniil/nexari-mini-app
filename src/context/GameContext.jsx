@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useTelegramUser } from '../hooks/useTelegramUser.ts';
 
 const GameContext = createContext();
 
@@ -11,6 +12,7 @@ export const useGame = () => {
 };
 
 export const GameProvider = ({ children }) => {
+  const telegramUser = useTelegramUser();
   const [coins, setCoins] = useState(8000);
   const [totalCoins, setTotalCoins] = useState(8000);
   const [stars, setStars] = useState(0);
@@ -20,13 +22,26 @@ export const GameProvider = ({ children }) => {
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [nextIncomeTime, setNextIncomeTime] = useState(0);
   
-  // Player data
-  const [player] = useState({
+  // Player data with Telegram integration
+  const [player, setPlayer] = useState({
     nickname: 'Player123',
     avatar: 'https://placehold.co/40x40',
     rank: 1,
     world: 'World of Consoles'
   });
+
+  // Update player data when Telegram user data is available
+  useEffect(() => {
+    if (telegramUser) {
+      setPlayer(prev => ({
+        ...prev,
+        nickname: telegramUser.nickname,
+        avatar: telegramUser.avatar,
+        telegramId: telegramUser.id,
+        fullName: telegramUser.fullName
+      }));
+    }
+  }, [telegramUser]);
 
   // Quest tracking
   const [totalClicks, setTotalClicks] = useState(0);
@@ -219,6 +234,7 @@ export const GameProvider = ({ children }) => {
     setCoins,
     setStars,
     setCurrentScreen,
+    setPlayer,
     addCoins,
     spendCoins,
     startTimer,
