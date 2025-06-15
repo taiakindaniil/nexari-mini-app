@@ -8,7 +8,9 @@ export default function Home() {
     loading, 
     error, 
     startFarming, 
-    claimDiamonds 
+    claimDiamonds,
+    isApiReady,
+    initDataRaw
   } = useGame();
   
   const [characterScale, setCharacterScale] = useState(1);
@@ -72,14 +74,23 @@ export default function Home() {
   const handleClaimClick = async () => {
     if (!gameStatus?.pending_diamonds || gameStatus.pending_diamonds <= 0 || claimLoading) return;
     
+    // Debug info
+    console.log('=== CLAIM DEBUG INFO ===');
+    console.log('API Ready:', isApiReady);
+    console.log('InitData Present:', !!initDataRaw);
+    console.log('InitData Length:', initDataRaw?.length || 0);
+    console.log('Pending Diamonds:', gameStatus.pending_diamonds);
+    console.log('=======================');
+    
     try {
       setClaimLoading(true);
       const result = await claimDiamonds();
       if (result.success) {
         // Show success message or animation
-        console.log(`Claimed ${result.claimed_diamonds} diamonds!`);
+        console.log(`Successfully claimed ${result.claimed_diamonds} diamonds!`);
       }
     } catch (error) {
+      console.error('Claim failed:', error);
       alert(`Failed to claim diamonds: ${error.message}`);
     } finally {
       setClaimLoading(false);
@@ -217,9 +228,10 @@ export default function Home() {
       {gameStatus?.pending_diamonds > 0 && (
         <div className="claim-section-bottom">
           <button 
-            className={`claim-button-premium ${claimLoading ? 'loading' : ''}`}
+            className={`claim-button-premium ${claimLoading ? 'loading' : ''} ${!isApiReady ? 'disabled' : ''}`}
             onClick={handleClaimClick}
-            disabled={claimLoading}
+            disabled={claimLoading || !isApiReady}
+            title={!isApiReady ? 'API not ready' : ''}
           >
             {claimLoading ? (
               <>
@@ -244,6 +256,8 @@ export default function Home() {
         <div className="debug-info">
           <div>Farming: {gameStatus.farming_active ? 'Active' : 'Inactive'}</div>
           <div>Pending: {gameStatus.pending_diamonds}</div>
+          <div>API Ready: {isApiReady ? 'Yes' : 'No'}</div>
+          <div>InitData: {initDataRaw ? `${initDataRaw.slice(0, 20)}...` : 'Missing'}</div>
           {loading && <div>Loading...</div>}
           {error && <div style={{color: 'red'}}>Error: {error}</div>}
         </div>

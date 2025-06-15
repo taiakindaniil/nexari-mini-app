@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useTelegramUser } from '../hooks/useTelegramUser.ts';
 import { useApi } from '../api/hooks/useApi';
+import { initDataRaw as _initDataRaw, useSignal } from '@telegram-apps/sdk-react';
 
 const GameContext = createContext();
 
@@ -15,6 +16,7 @@ export const useGame = () => {
 export const GameProvider = ({ children }) => {
   const telegramUser = useTelegramUser();
   const api = useApi();
+  const initDataRaw = useSignal(_initDataRaw);
   
   // Legacy state (keep for compatibility)
   const [coins, setCoins] = useState(8000);
@@ -75,8 +77,22 @@ export const GameProvider = ({ children }) => {
     { nickname: "CryptoStar", coins: 200, rank: 5 },
   ]);
 
-  // API Functions
-  const fetchGameStatus = async () => {
+  // Check if API is ready for requests
+  const isApiReady = useCallback(() => {
+    if (!api || !initDataRaw) {
+      console.warn('API not ready: missing api or initDataRaw');
+      return false;
+    }
+    return true;
+  }, [api, initDataRaw]);
+
+  // API Functions with proper error handling
+  const fetchGameStatus = useCallback(async () => {
+    if (!isApiReady()) {
+      console.warn('Skipping fetchGameStatus: API not ready');
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -90,9 +106,13 @@ export const GameProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [api, isApiReady]);
 
-  const startFarming = async (characterId = null) => {
+  const startFarming = useCallback(async (characterId = null) => {
+    if (!isApiReady()) {
+      throw new Error('API not ready');
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -108,12 +128,18 @@ export const GameProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [api, fetchGameStatus, isApiReady]);
 
-  const claimDiamonds = async () => {
+  const claimDiamonds = useCallback(async () => {
+    if (!isApiReady()) {
+      throw new Error('API not ready');
+    }
+
     try {
       setLoading(true);
       setError(null);
+      
+      console.log('Claiming diamonds with initData:', initDataRaw ? 'present' : 'missing');
       
       const response = await api.game.claimDiamonds();
       if (response.success) {
@@ -127,18 +153,27 @@ export const GameProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [api, fetchGameStatus, initDataRaw, isApiReady]);
 
-  // Initialize game status on mount
+  // Initialize game status when API is ready
   useEffect(() => {
-    fetchGameStatus();
-  }, []);
+    if (isApiReady()) {
+      fetchGameStatus();
+    }
+  }, [isApiReady, fetchGameStatus]);
 
-  // Refresh game status every 30 seconds
+  // Refresh game status every 30 seconds, but only if API is ready
   useEffect(() => {
-    const interval = setInterval(fetchGameStatus, 30000);
+    if (!isApiReady()) return;
+
+    const interval = setInterval(() => {
+      if (isApiReady()) {
+        fetchGameStatus();
+      }
+    }, 30000);
+    
     return () => clearInterval(interval);
-  }, []);
+  }, [isApiReady, fetchGameStatus]);
 
   // Initialize inventory with default character
   useEffect(() => {
@@ -296,6 +331,10 @@ export const GameProvider = ({ children }) => {
     gameStatus,
     loading,
     error,
+    
+    // API readiness check
+    isApiReady: isApiReady(),
+    initDataRaw,
     
     // Actions
     setCoins,
