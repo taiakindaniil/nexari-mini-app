@@ -4,6 +4,8 @@ import useApi from './hooks/useApi';
 
 import userService from './services/userService';
 import type { UserProfile, UserProfileUpdate, SyncResponse, ReferralResponse } from './services/userService';
+import walletService from './services/walletService';
+
 // Export services
 export {
   // API client
@@ -12,6 +14,9 @@ export {
   
   // User service
   userService,
+
+  // Wallet service
+  walletService,
   
   // Hooks
   useApi,
@@ -32,6 +37,7 @@ export type {
 // Create a single API object that contains all services
 const api = {
   user: userService,
+  wallet: walletService,
   setInitData,
 };
 

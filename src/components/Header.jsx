@@ -1,10 +1,14 @@
 import React from 'react';
 import { useGame } from '../context/GameContext';
 import { TonConnectButton } from '@tonconnect/ui-react';
+import { useTonConnect } from '../hooks/useTonConnect';
 
 export default function Header() {
   const { player, totalCoins } = useGame();
   
+  // Инициализируем хук для работы с кошельком (логика работает в фоне)
+  useTonConnect();
+
   return (
     <header className="top-menu">
       <div className="top-menu-left">
