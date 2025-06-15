@@ -29,11 +29,11 @@ class GameAPI {
     };
 
     if (options.body && typeof options.body === 'object') {
-      config.body = JSON.stringify(options.body);
+      requestConfig.body = JSON.stringify(options.body);
     }
 
     try {
-      const response = await fetch(url, config);
+      const response = await fetch(url, requestConfig);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
