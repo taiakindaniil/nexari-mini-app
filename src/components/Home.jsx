@@ -19,12 +19,37 @@ export default function Home() {
   const [scaleTimeout, setScaleTimeout] = useState(null);
   const [claimLoading, setClaimLoading] = useState(false);
 
-  // Format time display
+  // Improved time formatting
   const formatTime = (seconds) => {
-    if (!seconds) return '00:00';
-    const minutes = Math.floor(seconds / 60);
+    if (!seconds || seconds <= 0) return '00:00';
+    
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
     const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes.toString().padStart(2, '0')}m`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${remainingSeconds.toString().padStart(2, '0')}s`;
+    } else {
+      return `${remainingSeconds}s`;
+    }
+  };
+
+  // Get time label based on remaining time
+  const getTimeLabel = (seconds) => {
+    if (!seconds || seconds <= 0) return 'tap to start';
+    
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    
+    if (hours > 0) {
+      return 'remaining';
+    } else if (minutes > 0) {
+      return 'remaining';
+    } else {
+      return 'finishing';
+    }
   };
 
   const handleCharacterClick = async () => {
@@ -120,7 +145,7 @@ export default function Home() {
             {gameStatus?.farming_active ? (
               <>
                 <div className="info-value">{formatTime(gameStatus.time_remaining)}</div>
-                <div className="info-label">remaining</div>
+                <div className="info-label">{getTimeLabel(gameStatus.time_remaining)}</div>
               </>
             ) : (
               <>

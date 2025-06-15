@@ -3125,7 +3125,7 @@ main {
 /* Three Info Blocks at Top */
 .info-blocks-container {
   position: fixed;
-  top: 6rem;
+  top: 7rem;
   left: 1rem;
   right: 1rem;
   display: grid;
@@ -3183,6 +3183,12 @@ main {
   color: #fff;
   line-height: 1;
   margin-bottom: 0.2rem;
+  font-family: 'Courier New', monospace;
+  text-align: center;
+  min-height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .info-label {
@@ -3191,6 +3197,11 @@ main {
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  text-align: center;
+  min-height: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Individual block styles */
@@ -3210,7 +3221,35 @@ main {
 
 .timer-block .info-value {
   color: #ffd700;
+  font-size: 1.1rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
+
+  .timer-block .info-label {
+    font-size: 0.65rem;
+  }
+  
+  /* Responsive adjustments for better time display */
+  @media (max-width: 600px) {
+    .info-value {
+      font-size: 1.1rem;
+      min-height: 1.3rem;
+    }
+    
+    .info-label {
+      font-size: 0.65rem;
+      min-height: 0.8rem;
+    }
+    
+    .timer-block .info-value {
+      font-size: 0.95rem;
+    }
+    
+    .timer-block .info-label {
+      font-size: 0.6rem;
+    }
+  }
 
 .boost-block {
   background: rgba(238, 90, 36, 0.1);
@@ -3253,15 +3292,19 @@ main {
 
 /* Premium Claim Button Above Footer */
 .claim-section-bottom {
+  display: flex;
+  justify-content: center;
   position: fixed;
-  bottom: 8rem;
+  bottom: 9rem;
   left: 1rem;
   right: 1rem;
   z-index: 10;
+  max-width: 300px;
 }
 
 .claim-button-premium {
   width: 100%;
+  max-width: 500px;
   height: 60px;
   background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 25%, #1a1a1a 50%, #2d2d2d 75%, #1a1a1a 100%);
   border: 2px solid transparent;
@@ -3346,31 +3389,21 @@ main {
   transform: translateX(4px);
 }
 
-/* Mobile Responsive */
-@media (max-width: 600px) {
-  .info-blocks-container {
-    top: 4.5rem;
-    left: 0.5rem;
-    right: 0.5rem;
-    gap: 0.6rem;
-  }
-  
-  .info-block {
-    padding: 0.8rem 0.5rem;
-  }
-  
-  .info-icon {
-    font-size: 1.5rem;
-    margin-bottom: 0.4rem;
-  }
-  
-  .info-value {
-    font-size: 1.1rem;
-  }
-  
-  .info-label {
-    font-size: 0.65rem;
-  }
+  /* Mobile Responsive */
+  @media (max-width: 600px) {
+    .info-blocks-container {
+      top: 6rem;
+      gap: 0.6rem;
+    }
+    
+    .info-block {
+      padding: 0.8rem 0.5rem;
+    }
+    
+    .info-icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.4rem;
+    }
   
   .stars-display-top {
     top: 8rem;
@@ -3381,8 +3414,6 @@ main {
   
   .claim-section-bottom {
     bottom: 7rem;
-    left: 0.5rem;
-    right: 0.5rem;
   }
   
   .claim-button-premium {
