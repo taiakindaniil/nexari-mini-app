@@ -10,6 +10,12 @@ export const useClickBatching = () => {
   const [pendingClicks, setPendingClicks] = useState(0);
   const [isSending, setIsSending] = useState(false);
   const timeoutRef = useRef(null);
+  const pendingClicksRef = useRef(0);
+
+  // Синхронизируем ref с state
+  useEffect(() => {
+    pendingClicksRef.current = pendingClicks;
+  }, [pendingClicks]);
 
   // Загружаем сохранённые клики при инициализации
   useEffect(() => {
@@ -18,8 +24,9 @@ export const useClickBatching = () => {
       const count = parseInt(saved, 10);
       if (count > 0) {
         setPendingClicks(count);
+        pendingClicksRef.current = count;
         // Отправляем сохранённые клики
-        sendPendingClicks(count);
+        setTimeout(() => sendPendingClicks(count), 100);
       }
     }
   }, []);
@@ -33,16 +40,25 @@ export const useClickBatching = () => {
     }
   }, [pendingClicks]);
 
-  const sendPendingClicks = useCallback(async (clickCount = pendingClicks) => {
-    if (clickCount <= 0 || isSending) return;
+  const sendPendingClicks = useCallback(async (clickCount) => {
+    // Используем текущее значение из ref если clickCount не передан
+    const actualClickCount = clickCount || pendingClicksRef.current;
+    
+    if (actualClickCount <= 0 || isSending) {
+      console.log(`[ClickBatching] Skipping send: count=${actualClickCount}, isSending=${isSending}`);
+      return;
+    }
+
+    console.log(`[ClickBatching] Sending ${actualClickCount} clicks to server`);
 
     try {
       setIsSending(true);
       
-      const response = await api.game.batchIncrementClicks(clickCount);
+      const response = await api.game.batchIncrementClicks(actualClickCount);
       
       if (response.success) {
-        setPendingClicks(prev => Math.max(0, prev - clickCount));
+        console.log(`[ClickBatching] Successfully sent ${actualClickCount} clicks`);
+        setPendingClicks(prev => Math.max(0, prev - actualClickCount));
         
         // Очищаем таймер
         if (timeoutRef.current) {
@@ -53,57 +69,72 @@ export const useClickBatching = () => {
         return response;
       }
     } catch (error) {
-      console.error('Failed to send clicks:', error);
+      console.error('[ClickBatching] Failed to send clicks:', error);
       // Не сбрасываем клики при ошибке - они останутся в очереди
     } finally {
       setIsSending(false);
     }
-  }, [api, pendingClicks, isSending]);
+  }, [api, isSending]);
 
   const addClick = useCallback(() => {
-    setPendingClicks(prev => prev + 1);
+    setPendingClicks(prev => {
+      const newCount = prev + 1;
+      console.log(`[ClickBatching] Added click, pending: ${newCount}`);
+      
+      // Очищаем предыдущий таймер
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
 
-    // Очищаем предыдущий таймер
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    // Проверяем, нужно ли отправить сразу
-    if (pendingClicks + 1 >= CLICK_BATCH_SIZE) {
-      sendPendingClicks(pendingClicks + 1);
-    } else {
-      // Устанавливаем таймер на отправку через время
-      timeoutRef.current = setTimeout(() => {
-        sendPendingClicks();
-      }, CLICK_BATCH_TIMEOUT);
-    }
-  }, [pendingClicks, sendPendingClicks]);
+      // Проверяем, нужно ли отправить сразу
+      if (newCount >= CLICK_BATCH_SIZE) {
+        console.log(`[ClickBatching] Batch size reached (${newCount}), sending immediately`);
+        // Отправляем с небольшой задержкой чтобы избежать race condition
+        setTimeout(() => sendPendingClicks(newCount), 10);
+      } else {
+        console.log(`[ClickBatching] Setting timeout for ${CLICK_BATCH_TIMEOUT}ms`);
+        // Устанавливаем таймер на отправку через время
+        timeoutRef.current = setTimeout(() => {
+          sendPendingClicks();
+        }, CLICK_BATCH_TIMEOUT);
+      }
+      
+      return newCount;
+    });
+  }, [sendPendingClicks]);
 
   const addClicks = useCallback((count) => {
-    setPendingClicks(prev => prev + count);
+    setPendingClicks(prev => {
+      const newCount = prev + count;
+      
+      // Очищаем предыдущий таймер
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
 
-    // Очищаем предыдущий таймер
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    // Проверяем, нужно ли отправить сразу
-    if (pendingClicks + count >= CLICK_BATCH_SIZE) {
-      sendPendingClicks(pendingClicks + count);
-    } else {
-      // Устанавливаем таймер на отправку через время
-      timeoutRef.current = setTimeout(() => {
-        sendPendingClicks();
-      }, CLICK_BATCH_TIMEOUT);
-    }
-  }, [pendingClicks, sendPendingClicks]);
+      // Проверяем, нужно ли отправить сразу
+      if (newCount >= CLICK_BATCH_SIZE) {
+        // Отправляем с небольшой задержкой чтобы избежать race condition
+        setTimeout(() => sendPendingClicks(newCount), 10);
+      } else {
+        // Устанавливаем таймер на отправку через время
+        timeoutRef.current = setTimeout(() => {
+          sendPendingClicks();
+        }, CLICK_BATCH_TIMEOUT);
+      }
+      
+      return newCount;
+    });
+  }, [sendPendingClicks]);
 
   // Принудительная отправка всех накопленных кликов
   const flushClicks = useCallback(() => {
-    if (pendingClicks > 0) {
+    if (pendingClicksRef.current > 0 && !isSending) {
       sendPendingClicks();
     }
-  }, [pendingClicks, sendPendingClicks]);
+  }, [sendPendingClicks, isSending]);
 
   // Очистка при размонтировании
   useEffect(() => {
@@ -112,11 +143,11 @@ export const useClickBatching = () => {
         clearTimeout(timeoutRef.current);
       }
       // Отправляем накопленные клики при закрытии
-      if (pendingClicks > 0) {
-        sendPendingClicks();
+      if (pendingClicksRef.current > 0) {
+        sendPendingClicks(pendingClicksRef.current);
       }
     };
-  }, [pendingClicks, sendPendingClicks]);
+  }, [sendPendingClicks]);
 
   return {
     pendingClicks,

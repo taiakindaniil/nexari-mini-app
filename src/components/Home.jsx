@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useGame } from '../context/GameContext';
 import { useGameAPI } from '../hooks/useGameAPI';
 
@@ -18,6 +18,7 @@ export default function Home() {
   
   const [characterScale, setCharacterScale] = useState(1);
   const [scaleTimeout, setScaleTimeout] = useState(null);
+  const lastClickTime = useRef(0);
 
   // Format time display
   const formatTime = (seconds) => {
@@ -28,6 +29,13 @@ export default function Home() {
   };
 
   const handleCharacterClick = async () => {
+    // Дебаунсинг кликов - не более одного клика в 100мс
+    const now = Date.now();
+    if (now - lastClickTime.current < 100) {
+      return;
+    }
+    lastClickTime.current = now;
+
     // Increment click counter for quests
     await incrementClicks();
     
