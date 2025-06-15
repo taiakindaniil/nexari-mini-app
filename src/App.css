@@ -1076,16 +1076,12 @@ main {
         padding: 0.4rem 0.8rem;
     }
 
-    /* Hide old income counter on mobile in favor of new mining display */
-    .income-counter {
-        display: none;
-    }
-    
-    .income-timer {
-        display: none;
-    }
-    
-    .coin-counter {
+    /* Hide old displays on mobile in favor of compact design */
+    .income-counter,
+    .income-timer,
+    .coin-counter,
+    .mining-display,
+    .balance-section {
         display: none;
     }
 
@@ -2871,5 +2867,255 @@ main {
   .boost-button {
     padding: 0.4rem 0.8rem;
     font-size: 0.8rem;
+  }
+}
+
+/* Compact Mining Info Styles */
+.mining-info-compact {
+  position: fixed;
+  top: 6rem;
+  left: 1rem;
+  right: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 10;
+  gap: 1rem;
+}
+
+.mining-rate-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.mining-icon {
+  font-size: 1.5rem;
+  animation: diamond-sparkle 2s ease-in-out infinite;
+}
+
+.mining-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.mining-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #4facfe;
+  line-height: 1;
+}
+
+.mining-label {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.mining-timer-compact {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.timer-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.timer-icon {
+  font-size: 1.2rem;
+}
+
+.timer-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.boost-button-compact {
+  background: linear-gradient(135deg, #ffd700, #ffb347);
+  border: none;
+  border-radius: 8px;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+.boost-button-compact:hover {
+  transform: translateY(-1px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+}
+
+.start-farming-prompt {
+  text-align: right;
+}
+
+.start-farming-prompt span {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  font-weight: 500;
+  animation: pulse-text 2s ease-in-out infinite;
+}
+
+/* Actions Section */
+.actions-section {
+  position: fixed;
+  top: 9rem;
+  left: 1rem;
+  right: 1rem;
+  display: flex;
+  gap: 1rem;
+  z-index: 10;
+}
+
+.claim-button-compact {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  border: none;
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(238, 90, 36, 0.3);
+  animation: claim-pulse 2s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+.claim-button-compact::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s;
+}
+
+.claim-button-compact:hover::before {
+  left: 100%;
+}
+
+.claim-button-compact:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(238, 90, 36, 0.4);
+}
+
+.claim-button-compact:disabled,
+.claim-button-compact.loading {
+  opacity: 0.8;
+  cursor: not-allowed;
+  transform: none;
+  animation: none;
+}
+
+.stars-display-compact {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.stars-display-compact:hover {
+  background: rgba(0, 0, 0, 0.8);
+  transform: scale(1.05);
+}
+
+/* Mobile Responsive for Compact Design */
+@media (max-width: 600px) {
+  /* Hide old mining displays */
+  .mining-display,
+  .balance-section {
+    display: none;
+  }
+  
+  .mining-info-compact {
+    top: 4.5rem;
+    left: 0.5rem;
+    right: 0.5rem;
+    padding: 0.8rem;
+    gap: 0.8rem;
+  }
+  
+  .actions-section {
+    top: 7.5rem;
+    left: 0.5rem;
+    right: 0.5rem;
+    gap: 0.8rem;
+  }
+  
+  .mining-rate-compact {
+    gap: 0.4rem;
+  }
+  
+  .mining-icon {
+    font-size: 1.3rem;
+  }
+  
+  .mining-value {
+    font-size: 1rem;
+  }
+  
+  .mining-label {
+    font-size: 0.65rem;
+  }
+  
+  .timer-value {
+    font-size: 0.9rem;
+  }
+  
+  .boost-button-compact {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+  }
+  
+  .claim-button-compact {
+    padding: 0.7rem 0.8rem;
+    font-size: 0.9rem;
+  }
+  
+  .stars-display-compact {
+    padding: 0.7rem 0.8rem;
+    font-size: 0.9rem;
+  }
+  
+  .start-farming-prompt span {
+    font-size: 0.8rem;
+  }
+  
+  .character-container {
+    top: 55%;
+  }
+  
+  .character {
+    width: 130px;
+    height: 130px;
   }
 }

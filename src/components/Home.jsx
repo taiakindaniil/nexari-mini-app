@@ -102,52 +102,43 @@ export default function Home() {
 
   return (
     <div className="home-content">
-      {/* Mining Rate Display */}
-      <div className="mining-display">
-        <div className="mining-rate">
+      {/* Compact Mining Info */}
+      <div className="mining-info-compact">
+        <div className="mining-rate-compact">
           <div className="mining-icon">💎</div>
-          <div className="mining-info">
-            <div className="mining-value">{gameStatus?.income_rate || 0}</div>
-            <div className="mining-label">Diamonds/hour</div>
+          <div className="mining-details">
+            <span className="mining-value">{gameStatus?.income_rate || 0}</span>
+            <span className="mining-label">per hour</span>
           </div>
         </div>
         
-        {/* Mining Timer */}
-        <div className="mining-timer">
+        <div className="mining-timer-compact">
           {gameStatus?.farming_active ? (
-            <div className="timer-active">
+            <div className="timer-display">
               <div className="timer-icon">⏱️</div>
-              <div className="timer-info">
-                <div className="timer-value">{formatTime(gameStatus.time_remaining)}</div>
-                <div className="timer-label">Time remaining</div>
-              </div>
+              <span className="timer-value">{formatTime(gameStatus.time_remaining)}</span>
               <button 
-                className="boost-button"
+                className="boost-button-compact"
                 onClick={handleX4Click}
                 title="4x boost upgrade"
               >
-                ⚡ x4
+                ⚡x4
               </button>
             </div>
           ) : (
-            <div className="timer-inactive">
-              <div className="start-message">Click character to start mining!</div>
+            <div className="start-farming-prompt">
+              <span>Tap character to start mining!</span>
             </div>
           )}
         </div>
       </div>
       
-      {/* Balance and Claim Section */}
-      <div className="balance-section">
-        <div className="balance-display">
-          <div className="balance-icon">💎</div>
-          <div className="balance-value">{Math.floor(gameStatus?.diamonds_balance || 0)}</div>
-        </div>
-        
+      {/* Actions Section */}
+      <div className="actions-section">
         {/* Claim Button */}
         {gameStatus?.pending_diamonds > 0 && (
           <button 
-            className={`claim-button ${claimLoading ? 'loading' : ''}`}
+            className={`claim-button-compact ${claimLoading ? 'loading' : ''}`}
             onClick={handleClaimClick}
             disabled={claimLoading}
           >
@@ -158,17 +149,15 @@ export default function Home() {
               </>
             ) : (
               <>
-                <span>Claim +{gameStatus.pending_diamonds}</span>
-                <div className="claim-icon">💎</div>
+                <span>Claim +{gameStatus.pending_diamonds} 💎</span>
               </>
             )}
           </button>
         )}
         
         {/* Stars Display */}
-        <div className="stars-display" onClick={handleStarDonationClick}>
-          <div className="stars-icon">⭐</div>
-          <div className="stars-value">{stars}</div>
+        <div className="stars-display-compact" onClick={handleStarDonationClick}>
+          <span>⭐ {stars}</span>
         </div>
       </div>
       

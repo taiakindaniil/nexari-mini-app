@@ -1,10 +1,12 @@
 import React from 'react';
 import { useGame } from '../context/GameContext';
+import { useGameAPI } from '../hooks/useGameAPI';
 import { TonConnectButton } from '@tonconnect/ui-react';
 import { useTonConnect } from '../hooks/useTonConnect';
 
 export default function Header() {
-  const { player, totalCoins } = useGame();
+  const { player } = useGame();
+  const { gameStatus } = useGameAPI();
   
   // Инициализируем хук для работы с кошельком (логика работает в фоне)
   useTonConnect();
@@ -25,7 +27,7 @@ export default function Header() {
           <span className="player-nickname">{player.nickname}</span>
           <span className="player-max-coins">
             <img alt="Gem Stone" className="gem-icon" src="https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp" />
-            <span>{Math.floor(totalCoins)}</span>
+            <span>{Math.floor(gameStatus?.diamonds_balance || 0)}</span>
           </span>
         </div>
       </div>
