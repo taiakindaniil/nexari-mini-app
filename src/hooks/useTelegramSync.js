@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { retrieveLaunchParams } from '@telegram-apps/sdk-react';
-import { userService } from '../api';
+import { useApi } from '../api/hooks/useApi';
 
 export const useTelegramSync = () => {
   const [profile, setProfile] = useState(null);
@@ -8,13 +8,16 @@ export const useTelegramSync = () => {
   const [error, setError] = useState(null);
   const [syncResult, setSyncResult] = useState(null);
 
+  // Use the useApi hook to ensure proper authentication
+  const api = useApi();
+
   const syncTelegramData = async () => {
     try {
       setLoading(true);
       setError(null);
       
       // Синхронизируем данные из Telegram с базой
-      const result = await userService.syncTelegramData();
+      const result = await api.user.syncTelegramData();
       setSyncResult(result);
       setProfile(result.profile);
       
@@ -37,7 +40,7 @@ export const useTelegramSync = () => {
       setLoading(true);
       setError(null);
       
-      const profileData = await userService.getProfile();
+      const profileData = await api.user.getProfile();
       setProfile(profileData);
       
       return profileData;
@@ -55,7 +58,7 @@ export const useTelegramSync = () => {
       setLoading(true);
       setError(null);
       
-      const updatedProfile = await userService.updateProfile(updates);
+      const updatedProfile = await api.user.updateProfile(updates);
       setProfile(updatedProfile);
       
       return updatedProfile;
@@ -92,8 +95,11 @@ export const useTelegramSync = () => {
       }
     };
 
-    autoSync();
-  }, []);
+    // Only run auto sync when the api is available
+    if (api) {
+      autoSync();
+    }
+  }, [api]);
 
   return {
     profile,
