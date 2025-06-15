@@ -19,6 +19,9 @@ apiClient.interceptors.request.use(
     // Use the current initData if available
     if (currentInitData && config.headers) {
       config.headers['Authorization'] = `tma ${currentInitData}`;
+    } else {
+      // Log when initData is missing for debugging
+      console.warn('API Request without initData:', config.url);
     }
     
     return config;
@@ -45,6 +48,10 @@ apiClient.interceptors.response.use(
 // Helper function to set the initData
 export const setInitData = (initData: string | undefined) => {
   currentInitData = initData;
+  console.log('InitData set:', initData ? 'present' : 'cleared');
 };
+
+// Helper function to get current initData (for debugging)
+export const getCurrentInitData = () => currentInitData;
 
 export default apiClient; 

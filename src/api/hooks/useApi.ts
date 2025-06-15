@@ -14,12 +14,13 @@ export const useApi = () => {
   
   useEffect(() => {
     // Set the init data for API calls whenever it changes
-    setInitData(initDataRaw);
+    if (initDataRaw) {
+      setInitData(initDataRaw);
+    }
     
-    return () => {
-      // Clean up on unmount
-      setInitData(undefined);
-    };
+    // Don't clean up initData on unmount to prevent losing auth
+    // when components unmount/remount during page navigation
+    // The initData should persist across navigation
   }, [initDataRaw]);
   
   return api;
