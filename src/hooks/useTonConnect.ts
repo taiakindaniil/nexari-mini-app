@@ -8,62 +8,82 @@ export const useTonConnect = () => {
   const api = useApi();
   
   // Храним предыдущее состояние кошелька для отслеживания изменений
-  const prevWalletRef = useRef<typeof wallet>(wallet);
+  const prevWalletAddressRef = useRef<string | null>(null);
   const isInitializedRef = useRef(false);
 
-  // Handle wallet connection/disconnection events
+  // Функция для обработки изменений кошелька
+  const handleWalletChange = async (currentWallet: typeof wallet, source: string) => {
+    try {
+      const currentAddress = currentWallet?.account?.address || null;
+      const prevAddress = prevWalletAddressRef.current;
+      
+      console.log(`Wallet change detected from ${source}:`, {
+        prevAddress,
+        currentAddress,
+        isConnected: !!currentAddress
+      });
+      
+      // Пропускаем обработку, если адрес не изменился
+      if (currentAddress === prevAddress) {
+        console.log('Address unchanged, skipping');
+        return;
+      }
+
+      if (currentAddress) {
+        // Wallet connected - sync to database
+        console.log('Processing wallet connection:', currentAddress);
+        
+        const result = await api.wallet.connectWallet(currentAddress);
+        
+        if (result.success) {
+          console.log('Wallet synced to database:', result.message);
+        } else {
+          console.error('Failed to sync wallet:', result.message);
+        }
+      } else if (prevAddress) {
+        // Wallet disconnected - remove from database (только если ранее был подключен)
+        console.log('Processing wallet disconnection, prev address was:', prevAddress);
+        
+        const result = await api.wallet.disconnectWallet();
+        
+        if (result.success) {
+          console.log('Wallet removed from database:', result.message);
+        } else {
+          console.error('Failed to remove wallet:', result.message);
+        }
+      }
+      
+      // Обновляем предыдущее состояние
+      prevWalletAddressRef.current = currentAddress;
+      console.log('Updated prevWalletAddressRef to:', currentAddress);
+    } catch (error) {
+      console.error('Error syncing wallet:', error);
+    }
+  };
+
+  // Отслеживание через TonConnectUI onStatusChange
   useEffect(() => {
     if (!tonConnectUI) return;
 
-    const handleWalletChange = async (currentWallet: typeof wallet) => {
-      try {
-        const prevWallet = prevWalletRef.current;
-        
-        // Пропускаем обработку, если кошелек не изменился
-        const currentAddress = currentWallet?.account?.address;
-        const prevAddress = prevWallet?.account?.address;
-        
-        if (currentAddress === prevAddress) {
-          return;
-        }
-
-        if (currentWallet && currentWallet.account) {
-          // Wallet connected - sync to database
-          console.log('Wallet connected:', currentWallet.account.address);
-          
-          const result = await api.wallet.connectWallet(currentWallet.account.address);
-          
-          if (result.success) {
-            console.log('Wallet synced to database:', result.message);
-          } else {
-            console.error('Failed to sync wallet:', result.message);
-          }
-        } else if (prevWallet && prevWallet.account) {
-          // Wallet disconnected - remove from database (только если ранее был подключен)
-          console.log('Wallet disconnected');
-          
-          const result = await api.wallet.disconnectWallet();
-          console.log('Wallet removed from database:', result.message);
-        }
-        
-        // Обновляем предыдущее состояние
-        prevWalletRef.current = currentWallet;
-      } catch (error) {
-        console.error('Error syncing wallet:', error);
-      }
-    };
-
-    // Устанавливаем listener без начальной проверки
-    const unsubscribe = tonConnectUI.onStatusChange((wallet) => {
-      handleWalletChange(wallet);
+    // Устанавливаем listener
+    const unsubscribe = tonConnectUI.onStatusChange((walletInfo) => {
+      console.log('TonConnect status changed:', walletInfo);
+      handleWalletChange(walletInfo, 'onStatusChange');
     });
 
     // Обрабатываем текущее состояние только при первой инициализации
     if (!isInitializedRef.current) {
       isInitializedRef.current = true;
+      console.log('Initial wallet state:', wallet);
+      
+      // Устанавливаем начальное состояние
+      const initialAddress = wallet?.account?.address || null;
+      prevWalletAddressRef.current = initialAddress;
+      
       // Если кошелек уже подключен при инициализации, синхронизируем его
-      if (wallet && wallet.account) {
-        handleWalletChange(wallet);
+      if (initialAddress) {
+        console.log('Wallet already connected on init, syncing...');
+        handleWalletChange(wallet, 'initialization');
       }
     }
 
@@ -71,6 +91,14 @@ export const useTonConnect = () => {
       unsubscribe();
     };
   }, [tonConnectUI, api.wallet]);
+
+  // Дополнительное отслеживание через изменение wallet напрямую
+  useEffect(() => {
+    if (isInitializedRef.current) {
+      console.log('Direct wallet change detected via useEffect');
+      handleWalletChange(wallet, 'direct-wallet-change');
+    }
+  }, [wallet, api.wallet]);
 
   return {
     // TonConnect state
