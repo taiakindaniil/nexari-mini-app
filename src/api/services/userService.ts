@@ -46,7 +46,7 @@ class UserService {
    * @returns Promise with user profile data
    */
   async getProfile(): Promise<UserProfile> {
-    const { data } = await apiClient.get<UserProfile>('/user/profile');
+    const { data } = await apiClient.get<UserProfile>('/profile');
     return data;
   }
 
@@ -56,7 +56,7 @@ class UserService {
    * @returns Promise with updated user profile
    */
   async updateProfile(profileData: Partial<UserProfile>): Promise<UserProfile> {
-    const { data } = await apiClient.put<UserProfile>('/user/profile', profileData);
+    const { data } = await apiClient.put<UserProfile>('/profile', profileData);
     return data;
   }
 
@@ -74,7 +74,7 @@ class UserService {
    * @returns Promise with sync result
    */
   async syncTelegramData(): Promise<SyncResponse> {
-    const { data } = await apiClient.post<SyncResponse>('/user/sync-telegram');
+    const { data } = await apiClient.post<SyncResponse>('/sync-telegram');
     return data;
   }
 }
