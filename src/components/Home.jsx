@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { useGameAPI } from '../hooks/useGameAPI';
 
@@ -12,13 +12,11 @@ export default function Home() {
     loading, 
     error, 
     startFarming, 
-    claimDiamonds, 
-    incrementClicks 
+    claimDiamonds 
   } = useGameAPI();
   
   const [characterScale, setCharacterScale] = useState(1);
   const [scaleTimeout, setScaleTimeout] = useState(null);
-  const lastClickTime = useRef(0);
 
   // Format time display
   const formatTime = (seconds) => {
@@ -29,16 +27,6 @@ export default function Home() {
   };
 
   const handleCharacterClick = async () => {
-    // Дебаунсинг кликов - не более одного клика в 100мс
-    const now = Date.now();
-    if (now - lastClickTime.current < 100) {
-      return;
-    }
-    lastClickTime.current = now;
-
-    // Increment click counter for quests
-    await incrementClicks();
-    
     // Start farming if not active
     if (gameStatus && !gameStatus.farming_active) {
       try {
@@ -204,7 +192,6 @@ export default function Home() {
           borderRadius: '5px',
           maxWidth: '200px'
         }}>
-          <div>Clicks: {gameStatus.total_clicks}</div>
           <div>Farming: {gameStatus.farming_active ? 'Active' : 'Inactive'}</div>
           <div>Pending: {gameStatus.pending_diamonds}</div>
           {loading && <div>Loading...</div>}

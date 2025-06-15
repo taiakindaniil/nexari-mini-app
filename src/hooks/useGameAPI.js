@@ -1,15 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../api/hooks/useApi';
-import { useClickBatching } from './useClickBatching';
 
 export const useGameAPI = () => {
   const api = useApi();
   const [gameStatus, setGameStatus] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
-  // Используем батчинг кликов
-  const { pendingClicks, isSending, addClick, flushClicks } = useClickBatching();
 
   // Fetch game status
   const fetchGameStatus = useCallback(async () => {
@@ -18,11 +14,7 @@ export const useGameAPI = () => {
       setError(null);
       const response = await api.game.getStatus();
       if (response.success) {
-        setGameStatus({
-          ...response.data,
-          // Добавляем локальные клики к серверному счётчику
-          total_clicks: response.data.total_clicks + pendingClicks
-        });
+        setGameStatus(response.data);
       }
     } catch (err) {
       setError(err.message);
@@ -30,7 +22,7 @@ export const useGameAPI = () => {
     } finally {
       setLoading(false);
     }
-  }, [api, pendingClicks]);
+  }, [api]);
 
   // Start farming
   const startFarming = useCallback(async (characterId = null) => {
@@ -57,9 +49,6 @@ export const useGameAPI = () => {
       setLoading(true);
       setError(null);
       
-      // Отправляем накопленные клики перед клеймом
-      await flushClicks();
-      
       const response = await api.game.claimDiamonds();
       if (response.success) {
         await fetchGameStatus(); // Refresh status
@@ -72,25 +61,7 @@ export const useGameAPI = () => {
     } finally {
       setLoading(false);
     }
-  }, [api, fetchGameStatus, flushClicks]);
-
-  // Increment clicks (теперь использует батчинг)
-  const incrementClicks = useCallback(() => {
-    try {
-      addClick();
-      
-      // Обновляем локальный счётчик сразу для лучшего UX
-      setGameStatus(prev => prev ? {
-        ...prev,
-        total_clicks: prev.total_clicks + 1
-      } : null);
-      
-      return Promise.resolve({ success: true });
-    } catch (err) {
-      console.error('Failed to add click:', err);
-      return Promise.reject(err);
-    }
-  }, [addClick]);
+  }, [api, fetchGameStatus]);
 
   // Initialize game status on mount
   useEffect(() => {
@@ -110,9 +81,5 @@ export const useGameAPI = () => {
     fetchGameStatus,
     startFarming,
     claimDiamonds,
-    incrementClicks,
-    pendingClicks,
-    isSendingClicks: isSending,
-    flushClicks,
   };
 }; 

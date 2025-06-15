@@ -6,7 +6,6 @@ export interface GameStatus {
   income_rate: number;
   farming_active: boolean;
   time_remaining: number;
-  total_clicks: number;
   active_character: {
     id: number;
     name: string;
@@ -36,15 +35,7 @@ export interface ClaimDiamondsResponse {
   error?: string;
 }
 
-export interface ClickResponse {
-  success: boolean;
-  total_clicks: number;
-  added_clicks?: number;
-}
 
-export interface BatchClicksRequest {
-  count: number;
-}
 
 export interface GameStatusResponse {
   success: boolean;
@@ -81,18 +72,7 @@ class GameService {
     return response.data;
   }
 
-  /**
-   * Increment click counter for quests
-   */
-  async incrementClicks(): Promise<ClickResponse> {
-    const response = await apiClient.post('/game/click');
-    return response.data;
-  }
 
-  async batchIncrementClicks(count: number): Promise<ClickResponse> {
-    const response = await apiClient.post('/game/clicks', { count });
-    return response.data;
-  }
 }
 
 export default new GameService();

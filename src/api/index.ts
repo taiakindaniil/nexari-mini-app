@@ -6,7 +6,7 @@ import userService from './services/userService';
 import type { UserProfile, UserProfileUpdate, SyncResponse, ReferralResponse } from './services/userService';
 import walletService from './services/walletService';
 import gameService from './services/gameService';
-import type { GameStatus, StartFarmingResponse, ClaimDiamondsResponse, ClickResponse, GameStatusResponse } from './services/gameService';
+import type { GameStatus, StartFarmingResponse, ClaimDiamondsResponse, GameStatusResponse } from './services/gameService';
 import characterService from './services/characterService';
 import type { Character, UserCharacter, ShopCharactersResponse, InventoryResponse, PurchaseCharacterResponse, UpgradeCharacterResponse, SetActiveCharacterResponse, CharacterDetailsResponse } from './services/characterService';
 
@@ -47,7 +47,6 @@ export type {
   GameStatus,
   StartFarmingResponse,
   ClaimDiamondsResponse,
-  ClickResponse,
   GameStatusResponse,
   
   // Character types

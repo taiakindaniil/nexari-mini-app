@@ -44,7 +44,7 @@ export const GameProvider = ({ children }) => {
   }, [telegramUser]);
 
   // Quest tracking
-  const [totalClicks, setTotalClicks] = useState(0);
+
 
   // Character data
   const [selectedCharacter, setSelectedCharacter] = useState({
@@ -206,9 +206,7 @@ export const GameProvider = ({ children }) => {
 
 
 
-  const incrementClicks = () => {
-    setTotalClicks(prev => prev + 1);
-  };
+
 
   const value = {
     // State
@@ -222,7 +220,6 @@ export const GameProvider = ({ children }) => {
     player,
     playerData: {
       ...player,
-      totalClicks,
       stars
     },
     selectedCharacter,
@@ -241,8 +238,7 @@ export const GameProvider = ({ children }) => {
     setSelectedCharacter,
     addToInventory,
     upgradeCharacter,
-    updateLeaderboard,
-    incrementClicks
+    updateLeaderboard
   };
 
   return (
