@@ -3299,7 +3299,6 @@ main {
   left: 1rem;
   right: 1rem;
   z-index: 10;
-  max-width: 300px;
 }
 
 .claim-button-premium {
