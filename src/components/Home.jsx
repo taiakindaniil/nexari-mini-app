@@ -102,63 +102,48 @@ export default function Home() {
 
   return (
     <div className="home-content">
-      {/* Compact Mining Info */}
-      <div className="mining-info-compact">
-        <div className="mining-rate-compact">
-          <div className="mining-icon">💎</div>
-          <div className="mining-details">
-            <span className="mining-value">{gameStatus?.income_rate || 0}</span>
-            <span className="mining-label">per hour</span>
+      {/* Three Info Blocks at Top */}
+      <div className="info-blocks-container">
+        {/* Farming Rate Block */}
+        <div className="info-block farming-block">
+          <div className="info-icon">💎</div>
+          <div className="info-content">
+            <div className="info-value">{gameStatus?.income_rate || 0}</div>
+            <div className="info-label">per hour</div>
           </div>
         </div>
         
-        <div className="mining-timer-compact">
-          {gameStatus?.farming_active ? (
-            <div className="timer-display">
-              <div className="timer-icon">⏱️</div>
-              <span className="timer-value">{formatTime(gameStatus.time_remaining)}</span>
-              <button 
-                className="boost-button-compact"
-                onClick={handleX4Click}
-                title="4x boost upgrade"
-              >
-                ⚡x4
-              </button>
-            </div>
-          ) : (
-            <div className="start-farming-prompt">
-              <span>Tap character to start mining!</span>
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {/* Actions Section */}
-      <div className="actions-section">
-        {/* Claim Button */}
-        {gameStatus?.pending_diamonds > 0 && (
-          <button 
-            className={`claim-button-compact ${claimLoading ? 'loading' : ''}`}
-            onClick={handleClaimClick}
-            disabled={claimLoading}
-          >
-            {claimLoading ? (
+        {/* Timer Block */}
+        <div className="info-block timer-block">
+          <div className="info-icon">⏱️</div>
+          <div className="info-content">
+            {gameStatus?.farming_active ? (
               <>
-                <div className="claim-spinner"></div>
-                <span>Claiming...</span>
+                <div className="info-value">{formatTime(gameStatus.time_remaining)}</div>
+                <div className="info-label">remaining</div>
               </>
             ) : (
               <>
-                <span>Claim +{gameStatus.pending_diamonds} 💎</span>
+                <div className="info-value">--:--</div>
+                <div className="info-label">tap to start</div>
               </>
             )}
-          </button>
-        )}
-        
-        {/* Stars Display */}
-        <div className="stars-display-compact" onClick={handleStarDonationClick}>
-          <span>⭐ {stars}</span>
+          </div>
         </div>
+        
+        {/* Boost Block */}
+        <div className="info-block boost-block" onClick={handleX4Click}>
+          <div className="info-icon">⚡</div>
+          <div className="info-content">
+            <div className="info-value">x4</div>
+            <div className="info-label">boost</div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Stars Display */}
+      <div className="stars-display-top" onClick={handleStarDonationClick}>
+        <span>⭐ {stars}</span>
       </div>
       
       {/* Character Container */}
@@ -206,6 +191,32 @@ export default function Home() {
           </div>
         )}
       </div>
+      
+      {/* Premium Claim Button Above Footer */}
+      {gameStatus?.pending_diamonds > 0 && (
+        <div className="claim-section-bottom">
+          <button 
+            className={`claim-button-premium ${claimLoading ? 'loading' : ''}`}
+            onClick={handleClaimClick}
+            disabled={claimLoading}
+          >
+            {claimLoading ? (
+              <>
+                <div className="claim-spinner"></div>
+                <span>Claiming...</span>
+              </>
+            ) : (
+              <>
+                <div className="claim-content">
+                  <span className="claim-text">Claim Reward</span>
+                  <span className="claim-amount">+{gameStatus.pending_diamonds} 💎</span>
+                </div>
+                <div className="claim-arrow">→</div>
+              </>
+            )}
+          </button>
+        </div>
+      )}
       
       {/* Debug info in development */}
       {import.meta.env.DEV && gameStatus && (
