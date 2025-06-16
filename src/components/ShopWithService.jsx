@@ -91,25 +91,7 @@ export default function ShopWithService() {
     return `rarity-${rarity}`;
   };
 
-  const getRarityColor = (incomeRate) => {
-    return shopService.getCharacterRarityColor(incomeRate);
-  };
 
-  const getCharacterIcon = (character) => {
-    const name = character.character_name || character.name;
-    switch (name) {
-      case 'Crypto Miner': return '⛏️';
-      case 'Diamond Hunter': return '💎';
-      case 'Quantum Processor':
-      case 'Quantum Computer': return '🔬';
-      case 'Legendary Dragon': return '🐉';
-      case 'Space Explorer': return '🚀';
-      case 'Magic Wizard': return '🧙‍♂️';
-      case 'Controller': return '🎮';
-      case 'Smartphone': return '📱';
-      default: return '❓';
-    }
-  };
 
   const handleCaseClick = (caseData) => {
     if (isAnimationActive) return;
@@ -392,9 +374,6 @@ export default function ShopWithService() {
       {/* Inventory Content */}
               {activeTab === 'inventory' && (
           <div className="inventory-tab-content">
-            <div className="inventory-header-simple">
-              <h3>💎 {getUserDiamonds()} Diamonds</h3>
-            </div>
             <div className="inventory-main-content">
               <div className="characters-grid-tab">
                 {inventory.filter(item => item.character_name || item.name).length === 0 ? (
@@ -406,50 +385,45 @@ export default function ShopWithService() {
                   inventory.filter(item => item.character_name || item.name).map((character) => (
                     <div
                       key={character.id}
-                      className={`character-card-compact ${getRarityClass(character.income_rate)}`}
-                      style={{ '--rarity-color': getRarityColor(character.income_rate) }}
+                      className={`character-case-container ${getRarityClass(character.income_rate)} ${character.is_active ? 'active-character' : ''}`}
                     >
-                      <div className="character-card-header-compact">
-                        <div className="character-level-compact">Lvl. {character.level}</div>
-                        {character.is_active && <div className="active-badge-compact">Active</div>}
+                      <div className={`character-rarity ${getRarityClass(character.income_rate)}-rarity`}>
+                        Level {character.level}
+                        {character.is_active && <span className="active-indicator">● ACTIVE</span>}
                       </div>
                       
-                      <div className="character-avatar-compact">
-                        <div className="character-icon-compact">
-                          {getCharacterIcon(character)}
-                        </div>
+                      <img 
+                        alt={character.character_name || character.name} 
+                        className="character-image" 
+                        src={character.src || character.image_url || `https://em-content.zobj.net/source/telegram/386/video-game_1f3ae.webp`}
+                      />
+                      
+                      <div className="character-name">{character.character_name || character.name}</div>
+                      
+                      <div className="character-income">
+                        {character.income_rate} 💎/hour
+                      </div>
+                      
+                      <div className="character-rarity-text">
+                        {shopService.getCharacterRarity(character.income_rate)}
                       </div>
 
-                      <div className="character-info-compact">
-                        <h4 className="character-name-compact">{character.character_name || character.name}</h4>
-                        <div className="character-stats-compact">
-                          <div className="stat-compact">
-                            <span>{character.income_rate}/h 💎</span>
-                          </div>
-                          <div className="stat-compact">
-                            <span className={getRarityClass(character.income_rate)}>
-                              {shopService.getCharacterRarity(character.income_rate)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="character-actions-compact">
+                      <div className="character-actions">
                         <button
-                          className="upgrade-button-compact"
+                          className="character-upgrade-btn"
                           onClick={() => handleUpgradeCharacterDirect(character)}
                           disabled={upgrading || getUserDiamonds() < shopService.calculateUpgradeCost(character.level)}
                         >
-                          ⬆️ {shopService.calculateUpgradeCost(character.level)}💎
+                          Upgrade {shopService.calculateUpgradeCost(character.level)} 💎
                         </button>
 
                         {!character.is_active && (
                           <button
-                            className="activate-button-compact"
+                            className="character-activate-btn"
                             onClick={() => handleSetActiveCharacterDirect(character)}
                             disabled={settingActive}
                           >
-                            ⭐ Activate
+                            Set Active
                           </button>
                         )}
                       </div>
