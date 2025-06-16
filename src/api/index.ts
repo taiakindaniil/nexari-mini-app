@@ -9,6 +9,8 @@ import gameService from './services/gameService';
 import type { GameStatus, StartFarmingResponse, ClaimDiamondsResponse, GameStatusResponse } from './services/gameService';
 import characterService from './services/characterService';
 import type { Character, UserCharacter, ShopCharactersResponse, InventoryResponse, PurchaseCharacterResponse, UpgradeCharacterResponse, SetActiveCharacterResponse, CharacterDetailsResponse } from './services/characterService';
+import shopService from './services/shopService';
+import type { CaseData, InventoryItem, CaseReward, PurchaseCaseRequest, PurchaseCaseResponse, CaseHistoryEntry, CaseDetails } from './services/shopService';
 
 // Export services
 export {
@@ -27,6 +29,9 @@ export {
   
   // Character service
   characterService,
+  
+  // Shop service
+  shopService,
   
   // Hooks
   useApi,
@@ -58,6 +63,15 @@ export type {
   UpgradeCharacterResponse,
   SetActiveCharacterResponse,
   CharacterDetailsResponse,
+  
+  // Shop types
+  CaseData,
+  InventoryItem,
+  CaseReward,
+  PurchaseCaseRequest,
+  PurchaseCaseResponse,
+  CaseHistoryEntry,
+  CaseDetails,
 };
 
 // Create a single API object that contains all services
@@ -66,6 +80,7 @@ const api = {
   wallet: walletService,
   game: gameService,
   character: characterService,
+  shop: shopService,
   setInitData,
 };
 
