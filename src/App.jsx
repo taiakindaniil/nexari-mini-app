@@ -3,6 +3,7 @@ import './App.css';
 import Home from './components/Home';
 import Shop from './components/Shop';
 import ShopNew from './components/ShopNew';
+import ShopAPI from './components/ShopAPI';
 import Market from './components/Market';
 import Quests from './components/Quests';
 import Games from './components/Games';
@@ -25,7 +26,7 @@ function AppContent() {
       <Header />
       
       {currentScreen === 'home' && <Home />}
-      {currentScreen === 'shop' && <ShopNew />}
+      {currentScreen === 'shop' && <ShopAPI />}
       {currentScreen === 'market' && <Market />}
       {currentScreen === 'quests' && <Quests />}
       {currentScreen === 'games' && <Games />}
