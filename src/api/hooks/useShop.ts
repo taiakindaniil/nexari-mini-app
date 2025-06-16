@@ -5,13 +5,18 @@ import shopService, {
   PurchaseCaseRequest, 
   PurchaseCaseResponse,
   CaseHistoryEntry,
-  CaseDetails
+  CaseDetails,
+  UpgradeCharacterRequest,
+  UpgradeCharacterResponse,
+  SetActiveCharacterRequest,
+  SetActiveCharacterResponse
 } from '../services/shopService';
 
 export interface UseShopReturn {
   // State
   cases: CaseData[];
   inventory: InventoryItem[];
+  selectedCharacter: InventoryItem | null;
   loading: boolean;
   error: string | null;
   
@@ -21,6 +26,9 @@ export interface UseShopReturn {
   purchaseCase: (request: PurchaseCaseRequest) => Promise<PurchaseCaseResponse>;
   getCaseHistory: (limit?: number) => Promise<CaseHistoryEntry[]>;
   getCaseDetails: (caseId: number) => Promise<CaseDetails>;
+  upgradeCharacter: (characterId: number) => Promise<UpgradeCharacterResponse>;
+  setActiveCharacter: (characterId: number) => Promise<SetActiveCharacterResponse>;
+  selectCharacter: (character: InventoryItem | null) => void;
   clearError: () => void;
 }
 
@@ -30,6 +38,7 @@ export interface UseShopReturn {
 export const useShop = (): UseShopReturn => {
   const [cases, setCases] = useState<CaseData[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [selectedCharacter, setSelectedCharacter] = useState<InventoryItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -103,9 +112,60 @@ export const useShop = (): UseShopReturn => {
     }
   }, []);
 
+  const upgradeCharacter = useCallback(async (characterId: number): Promise<UpgradeCharacterResponse> => {
+    try {
+      setError(null);
+      const result = await shopService.upgradeCharacter({ character_id: characterId });
+      
+      // Refresh inventory after successful upgrade
+      if (result.success) {
+        await fetchInventory();
+        // Update selected character if it was upgraded
+        if (selectedCharacter && selectedCharacter.id === characterId) {
+          const updatedInventory = await shopService.getInventory();
+          const updatedCharacter = updatedInventory.find(item => item.id === characterId);
+          if (updatedCharacter) {
+            setSelectedCharacter(updatedCharacter);
+          }
+        }
+      }
+      
+      return result;
+    } catch (err) {
+      console.error('Error upgrading character:', err);
+      const errorMessage = 'Failed to upgrade character';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    }
+  }, [fetchInventory, selectedCharacter]);
+
+  const setActiveCharacter = useCallback(async (characterId: number): Promise<SetActiveCharacterResponse> => {
+    try {
+      setError(null);
+      const result = await shopService.setActiveCharacter({ character_id: characterId });
+      
+      // Refresh inventory after successful activation
+      if (result.success) {
+        await fetchInventory();
+      }
+      
+      return result;
+    } catch (err) {
+      console.error('Error setting active character:', err);
+      const errorMessage = 'Failed to set active character';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    }
+  }, [fetchInventory]);
+
+  const selectCharacter = useCallback((character: InventoryItem | null) => {
+    setSelectedCharacter(character);
+  }, []);
+
   return {
     cases,
     inventory,
+    selectedCharacter,
     loading,
     error,
     fetchCases,
@@ -113,6 +173,9 @@ export const useShop = (): UseShopReturn => {
     purchaseCase,
     getCaseHistory,
     getCaseDetails,
+    upgradeCharacter,
+    setActiveCharacter,
+    selectCharacter,
     clearError,
   };
 };

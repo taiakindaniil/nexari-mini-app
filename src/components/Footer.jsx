@@ -4,6 +4,7 @@ export default function Footer({ currentScreen, setCurrentScreen }) {
   const menuItems = [
     { id: 'home', label: 'Home', icon: 'https://em-content.zobj.net/source/telegram/386/television_1f4fa.webp' },
     { id: 'shop', label: 'Shop', icon: 'https://em-content.zobj.net/source/telegram/386/money-with-wings_1f4b8.webp' },
+    // { id: 'inventory', label: 'Inventory', icon: 'https://em-content.zobj.net/source/telegram/386/backpack_1f392.webp' },
     { id: 'market', label: 'Market', icon: 'https://em-content.zobj.net/source/telegram/386/star_2b50.webp' },
     { id: 'quests', label: 'Quests', icon: 'https://em-content.zobj.net/source/telegram/386/trophy_1f3c6.webp' },
     { id: 'games', label: 'Games', icon: 'https://em-content.zobj.net/source/telegram/386/revolving-hearts_1f49e.webp' }

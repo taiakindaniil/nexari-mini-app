@@ -48,6 +48,28 @@ export interface PurchaseCaseResponse {
   reward?: CaseReward;
 }
 
+export interface UpgradeCharacterRequest {
+  character_id: number;
+}
+
+export interface UpgradeCharacterResponse {
+  success: boolean;
+  error?: string;
+  new_level?: number;
+  new_income_rate?: number;
+  cost?: number;
+}
+
+export interface SetActiveCharacterRequest {
+  character_id: number;
+}
+
+export interface SetActiveCharacterResponse {
+  success: boolean;
+  error?: string;
+  character?: InventoryItem;
+}
+
 export interface CaseHistoryEntry {
   id: number;
   case_name: string;
@@ -99,8 +121,20 @@ class ShopService {
    * Get user's inventory
    */
   async getInventory(): Promise<InventoryItem[]> {
-    const response = await apiClient.get<InventoryItem[]>('/shop/inventory');
-    return response.data;
+    try {
+      // Try shop inventory first (for characters from cases)
+      const shopResponse = await apiClient.get<InventoryItem[]>('/shop/inventory');
+      return shopResponse.data;
+    } catch (error) {
+      // Fallback to characters inventory
+      try {
+        const charactersResponse = await apiClient.get<{success: boolean, inventory: InventoryItem[]}>('/characters/inventory');
+        return charactersResponse.data.inventory || [];
+      } catch (fallbackError) {
+        console.error('Failed to fetch inventory from both endpoints:', error, fallbackError);
+        return [];
+      }
+    }
   }
 
   /**
@@ -126,6 +160,26 @@ class ShopService {
    */
   async getCaseDetails(caseId: number): Promise<CaseDetails> {
     const response = await apiClient.get<CaseDetails>(`/shop/case/${caseId}`);
+    return response.data;
+  }
+
+  /**
+   * Upgrade a character in inventory
+   */
+  async upgradeCharacter(request: UpgradeCharacterRequest): Promise<UpgradeCharacterResponse> {
+    const response = await apiClient.post<UpgradeCharacterResponse>('/characters/upgrade', {
+      user_character_id: request.character_id
+    });
+    return response.data;
+  }
+
+  /**
+   * Set active character for farming
+   */
+  async setActiveCharacter(request: SetActiveCharacterRequest): Promise<SetActiveCharacterResponse> {
+    const response = await apiClient.post<SetActiveCharacterResponse>('/characters/set-active', {
+      user_character_id: request.character_id
+    });
     return response.data;
   }
 
@@ -227,6 +281,38 @@ class ShopService {
       return `${caseData.price_ton} TON`;
     }
     return 'Free';
+  }
+
+  /**
+   * Calculate upgrade cost for character
+   */
+  calculateUpgradeCost(level: number): number {
+    const baseCost = 500;
+    return baseCost * Math.pow(2, level - 1);
+  }
+
+  /**
+   * Get character rarity based on income rate
+   */
+  getCharacterRarity(incomeRate: number): string {
+    if (incomeRate >= 1000) return 'legendary';
+    if (incomeRate >= 500) return 'epic';
+    if (incomeRate >= 200) return 'rare';
+    return 'common';
+  }
+
+  /**
+   * Get character rarity color
+   */
+  getCharacterRarityColor(incomeRate: number): string {
+    const rarity = this.getCharacterRarity(incomeRate);
+    const colors = {
+      'common': '#95a5a6',
+      'rare': '#3498db',
+      'epic': '#9b59b6',
+      'legendary': '#f39c12'
+    };
+    return colors[rarity] || colors.common;
   }
 }
 

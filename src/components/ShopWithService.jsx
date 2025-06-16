@@ -2,22 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { useGame } from '../context/GameContext';
 import { useShop } from '../api/hooks/useShop.ts';
 import shopService from '../api/services/shopService.ts';
+import './Inventory.css';
 
 export default function ShopWithService() {
-  const { fetchGameStatus } = useGame();
+  const { user, updateUser, fetchGameStatus } = useGame();
   const {
     cases,
     inventory,
+    selectedCharacter,
     loading,
     error,
     fetchCases,
     fetchInventory,
     purchaseCase,
+    upgradeCharacter,
+    setActiveCharacter,
+    selectCharacter,
     clearError
   } = useShop();
   
   const [isAnimationActive, setIsAnimationActive] = useState(false);
   const [activeTab, setActiveTab] = useState('cases');
+  const [upgrading, setUpgrading] = useState(false);
+  const [settingActive, setSettingActive] = useState(false);
 
   // Fetch data on component mount
   useEffect(() => {
@@ -27,6 +34,66 @@ export default function ShopWithService() {
 
   const handleTabSwitch = (tab) => {
     setActiveTab(tab);
+  };
+
+  const handleSelectCharacter = (character) => {
+    selectCharacter(character);
+  };
+
+  const handleUpgradeCharacter = async () => {
+    if (!selectedCharacter || upgrading) return;
+    
+    const upgradeCost = shopService.calculateUpgradeCost(selectedCharacter.level);
+    
+    if (user.diamonds < upgradeCost) {
+      alert(`Not enough diamonds! Required: ${upgradeCost}, you have: ${user.diamonds}`);
+      return;
+    }
+
+    setUpgrading(true);
+    try {
+      const result = await upgradeCharacter(selectedCharacter.id);
+      if (result.success) {
+        // Update user diamonds
+        updateUser({ diamonds: user.diamonds - upgradeCost });
+        alert(`Character upgraded to level ${result.new_level}!`);
+      } else {
+        alert(result.error || 'Error upgrading character');
+      }
+    } catch (err) {
+      console.error('Upgrade error:', err);
+      alert('Error upgrading character');
+    } finally {
+      setUpgrading(false);
+    }
+  };
+
+  const handleSetActiveCharacter = async () => {
+    if (!selectedCharacter || settingActive) return;
+
+    setSettingActive(true);
+    try {
+      const result = await setActiveCharacter(selectedCharacter.id);
+      if (result.success) {
+        alert(`${selectedCharacter.character_name} is now the active character!`);
+      } else {
+        alert(result.error || 'Error setting active character');
+      }
+    } catch (err) {
+      console.error('Set active error:', err);
+      alert('Error setting active character');
+    } finally {
+      setSettingActive(false);
+    }
+  };
+
+  const getRarityClass = (incomeRate) => {
+    const rarity = shopService.getCharacterRarity(incomeRate);
+    return `rarity-${rarity}`;
+  };
+
+  const getRarityColor = (incomeRate) => {
+    return shopService.getCharacterRarityColor(incomeRate);
   };
 
   const handleCaseClick = (caseData) => {
@@ -309,41 +376,157 @@ export default function ShopWithService() {
 
       {/* Inventory Content */}
       {activeTab === 'inventory' && (
-        <div className="inventory-content">
-          <div className="inventory-items-container">
-            {inventory.length === 0 ? (
-              <div className="empty-inventory">
-                <div className="empty-icon">📦</div>
-                <div className="empty-text">No items in inventory</div>
-                <div className="empty-subtext">Open some cases to get started!</div>
-              </div>
-            ) : (
-              inventory.map((item) => (
-                <div 
-                  key={item.id}
-                  className="inventory-item-container"
-                  style={{ 
-                    background: item.background || 'linear-gradient(135deg, #89f7fe, #66a6ff)',
-                    boxShadow: '0 0 10px rgba(255,255,255,0.3)'
-                  }}
-                >
-                  <img 
-                    src={item.src} 
-                    alt={item.name} 
-                    className={`inventory-image ${item.is_mutated ? 'mutated' : ''}`}
-                  />
-                  <div className="inventory-details">
-                    <div className="inventory-name">{item.name}</div>
-                    <div className="inventory-stats">
-                      Lvl {item.level}, {item.income_rate}/h
-                      {item.is_mutated && <span className="mutated-label">⚡ Mutated</span>}
+        <div className="inventory-tab-content">
+          <div className="inventory-header-tab">
+            <h3>Character Inventory</h3>
+            <div className="inventory-stats-tab">
+              <span>Total characters: {inventory.filter(item => item.character_name).length}</span>
+              <span>💎 {user.diamonds}</span>
+            </div>
+          </div>
+
+          <div className="inventory-main-content">
+            <div className="characters-grid-tab">
+              {inventory.filter(item => item.character_name).length === 0 ? (
+                <div className="empty-inventory-tab">
+                  <p>You don't have any characters yet</p>
+                  <p>Open cases in the shop to get characters!</p>
+                </div>
+              ) : (
+                inventory.filter(item => item.character_name).map((character) => (
+                  <div
+                    key={character.id}
+                    className={`character-card-tab ${selectedCharacter?.id === character.id ? 'selected' : ''} ${getRarityClass(character.income_rate)}`}
+                    onClick={() => handleSelectCharacter(character)}
+                    style={{ '--rarity-color': getRarityColor(character.income_rate) }}
+                  >
+                    <div className="character-card-header-tab">
+                      <div className="character-level-tab">Lvl. {character.level}</div>
+                      {character.is_active && <div className="active-badge-tab">Active</div>}
                     </div>
-                    <div className="inventory-acquired">
-                      Acquired: {new Date(item.acquired_at).toLocaleDateString()}
+                    
+                    <div className="character-avatar-tab">
+                      <div className="character-icon-tab">
+                        {character.character_name === 'Crypto Miner' && '⛏️'}
+                        {character.character_name === 'Diamond Hunter' && '💎'}
+                        {character.character_name === 'Quantum Processor' && '🔬'}
+                        {character.character_name === 'Legendary Dragon' && '🐉'}
+                        {character.character_name === 'Space Explorer' && '🚀'}
+                        {character.character_name === 'Magic Wizard' && '🧙‍♂️'}
+                      </div>
+                    </div>
+
+                    <div className="character-info-tab">
+                      <h4 className="character-name-tab">{character.character_name}</h4>
+                      <div className="character-stats-tab">
+                        <div className="stat-tab">
+                          <span className="stat-label-tab">Income/hour:</span>
+                          <span className="stat-value-tab">{character.income_rate}</span>
+                        </div>
+                        <div className="stat-tab">
+                          <span className="stat-label-tab">Rarity:</span>
+                          <span className={`stat-value-tab ${getRarityClass(character.income_rate)}`}>
+                            {shopService.getCharacterRarity(character.income_rate)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="character-card-footer-tab">
+                      <div className="upgrade-cost-tab">
+                        Upgrade: {shopService.calculateUpgradeCost(character.level)} 💎
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {selectedCharacter && (
+              <div className="character-details-tab">
+                <div className="details-header-tab">
+                  <h4>Selected Character</h4>
+                  <button 
+                    className="close-details-tab"
+                    onClick={() => selectCharacter(null)}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="details-content-tab">
+                  <div className="character-preview-tab">
+                    <div className="character-avatar-large-tab">
+                      <div className="character-icon-large-tab">
+                        {selectedCharacter.character_name === 'Crypto Miner' && '⛏️'}
+                        {selectedCharacter.character_name === 'Diamond Hunter' && '💎'}
+                        {selectedCharacter.character_name === 'Quantum Processor' && '🔬'}
+                        {selectedCharacter.character_name === 'Legendary Dragon' && '🐉'}
+                        {selectedCharacter.character_name === 'Space Explorer' && '🚀'}
+                        {selectedCharacter.character_name === 'Magic Wizard' && '🧙‍♂️'}
+                      </div>
+                    </div>
+                    
+                    <div className="character-details-info-tab">
+                      <h5>{selectedCharacter.character_name}</h5>
+                      <div className="detail-stats-tab">
+                        <div className="detail-stat-tab">
+                          <span>Level:</span>
+                          <span>{selectedCharacter.level}</span>
+                        </div>
+                        <div className="detail-stat-tab">
+                          <span>Hourly income:</span>
+                          <span>{selectedCharacter.income_rate} 💎</span>
+                        </div>
+                        <div className="detail-stat-tab">
+                          <span>Rarity:</span>
+                          <span className={getRarityClass(selectedCharacter.income_rate)}>
+                            {shopService.getCharacterRarity(selectedCharacter.income_rate)}
+                          </span>
+                        </div>
+                        <div className="detail-stat-tab">
+                          <span>Status:</span>
+                          <span>{selectedCharacter.is_active ? 'Active' : 'Inactive'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="character-actions-tab">
+                    <button
+                      className="upgrade-button-tab"
+                      onClick={handleUpgradeCharacter}
+                      disabled={upgrading || user.diamonds < shopService.calculateUpgradeCost(selectedCharacter.level)}
+                    >
+                      {upgrading ? 'Upgrading...' : `Upgrade for ${shopService.calculateUpgradeCost(selectedCharacter.level)} 💎`}
+                    </button>
+
+                    {!selectedCharacter.is_active && (
+                      <button
+                        className="activate-button-tab"
+                        onClick={handleSetActiveCharacter}
+                        disabled={settingActive}
+                      >
+                        {settingActive ? 'Activating...' : 'Set as Active'}
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="upgrade-preview-tab">
+                    <h6>After upgrade:</h6>
+                    <div className="upgrade-stats-tab">
+                      <div className="upgrade-stat-tab">
+                        <span>Level:</span>
+                        <span>{selectedCharacter.level} → {selectedCharacter.level + 1}</span>
+                      </div>
+                      <div className="upgrade-stat-tab">
+                        <span>Hourly income:</span>
+                        <span>{selectedCharacter.income_rate} → {Math.floor(selectedCharacter.income_rate * 1.5)} 💎</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              ))
+              </div>
             )}
           </div>
         </div>
