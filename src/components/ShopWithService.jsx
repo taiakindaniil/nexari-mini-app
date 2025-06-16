@@ -80,7 +80,7 @@ export default function ShopWithService() {
     try {
       const result = await setActiveCharacter(selectedCharacter.id);
       if (result.success) {
-        alert(`${selectedCharacter.character_name} is now the active character!`);
+        alert(`${selectedCharacter.character_name || selectedCharacter.name} is now the active character!`);
       } else {
         alert(result.error || 'Error setting active character');
       }
@@ -99,6 +99,22 @@ export default function ShopWithService() {
 
   const getRarityColor = (incomeRate) => {
     return shopService.getCharacterRarityColor(incomeRate);
+  };
+
+  const getCharacterIcon = (character) => {
+    const name = character.character_name || character.name;
+    switch (name) {
+      case 'Crypto Miner': return '⛏️';
+      case 'Diamond Hunter': return '💎';
+      case 'Quantum Processor':
+      case 'Quantum Computer': return '🔬';
+      case 'Legendary Dragon': return '🐉';
+      case 'Space Explorer': return '🚀';
+      case 'Magic Wizard': return '🧙‍♂️';
+      case 'Controller': return '🎮';
+      case 'Smartphone': return '📱';
+      default: return '❓';
+    }
   };
 
   const handleCaseClick = (caseData) => {
@@ -385,20 +401,20 @@ export default function ShopWithService() {
           <div className="inventory-header-tab">
             <h3>Character Inventory</h3>
             <div className="inventory-stats-tab">
-              <span>Total characters: {inventory.filter(item => item.character_name).length}</span>
+              <span>Total characters: {inventory.filter(item => item.character_name || item.name).length}</span>
               <span>💎 {getUserDiamonds()}</span>
             </div>
           </div>
 
           <div className="inventory-main-content">
             <div className="characters-grid-tab">
-              {inventory.filter(item => item.character_name).length === 0 ? (
+              {inventory.filter(item => item.character_name || item.name).length === 0 ? (
                 <div className="empty-inventory-tab">
                   <p>You don't have any characters yet</p>
                   <p>Open cases in the shop to get characters!</p>
                 </div>
               ) : (
-                inventory.filter(item => item.character_name).map((character) => (
+                inventory.filter(item => item.character_name || item.name).map((character) => (
                   <div
                     key={character.id}
                     className={`character-card-tab ${selectedCharacter?.id === character.id ? 'selected' : ''} ${getRarityClass(character.income_rate)}`}
@@ -412,17 +428,12 @@ export default function ShopWithService() {
                     
                     <div className="character-avatar-tab">
                       <div className="character-icon-tab">
-                        {character.character_name === 'Crypto Miner' && '⛏️'}
-                        {character.character_name === 'Diamond Hunter' && '💎'}
-                        {character.character_name === 'Quantum Processor' && '🔬'}
-                        {character.character_name === 'Legendary Dragon' && '🐉'}
-                        {character.character_name === 'Space Explorer' && '🚀'}
-                        {character.character_name === 'Magic Wizard' && '🧙‍♂️'}
+                        {getCharacterIcon(character)}
                       </div>
                     </div>
 
                     <div className="character-info-tab">
-                      <h4 className="character-name-tab">{character.character_name}</h4>
+                      <h4 className="character-name-tab">{character.character_name || character.name}</h4>
                       <div className="character-stats-tab">
                         <div className="stat-tab">
                           <span className="stat-label-tab">Income/hour:</span>
@@ -463,17 +474,12 @@ export default function ShopWithService() {
                   <div className="character-preview-tab">
                     <div className="character-avatar-large-tab">
                       <div className="character-icon-large-tab">
-                        {selectedCharacter.character_name === 'Crypto Miner' && '⛏️'}
-                        {selectedCharacter.character_name === 'Diamond Hunter' && '💎'}
-                        {selectedCharacter.character_name === 'Quantum Processor' && '🔬'}
-                        {selectedCharacter.character_name === 'Legendary Dragon' && '🐉'}
-                        {selectedCharacter.character_name === 'Space Explorer' && '🚀'}
-                        {selectedCharacter.character_name === 'Magic Wizard' && '🧙‍♂️'}
+                        {getCharacterIcon(selectedCharacter)}
                       </div>
                     </div>
                     
                     <div className="character-details-info-tab">
-                      <h5>{selectedCharacter.character_name}</h5>
+                      <h5>{selectedCharacter.character_name || selectedCharacter.name}</h5>
                       <div className="detail-stats-tab">
                         <div className="detail-stat-tab">
                           <span>Level:</span>
