@@ -385,26 +385,26 @@ export default function ShopWithService() {
                   inventory.filter(item => item.character_name || item.name).map((character) => (
                     <div
                       key={character.id}
-                      className={`character-case-container ${getRarityClass(character.income_rate)} ${character.is_active ? 'active-character' : ''}`}
+                      className={`case-container ${getRarityClass(character.income_rate)} ${character.is_active ? 'active-character' : ''}`}
                     >
-                      <div className={`character-rarity ${getRarityClass(character.income_rate)}-rarity`}>
+                      <div className={`case-rarity ${getRarityClass(character.income_rate)}-rarity`}>
                         Level {character.level}
                         {character.is_active && <span className="active-indicator">● ACTIVE</span>}
                       </div>
                       
                       <img 
                         alt={character.character_name || character.name} 
-                        className="character-image" 
+                        className="case-image" 
                         src={character.src || character.image_url || `https://em-content.zobj.net/source/telegram/386/video-game_1f3ae.webp`}
                       />
                       
-                      <div className="character-name">{character.character_name || character.name}</div>
+                      <div className="case-name">{character.character_name || character.name}</div>
                       
-                      <div className="character-income">
+                      <div className="case-description">
                         {character.income_rate} 💎/hour
                       </div>
                       
-                      <div className="character-rarity-text">
+                      <div className="case-price">
                         {shopService.getCharacterRarity(character.income_rate)}
                       </div>
 

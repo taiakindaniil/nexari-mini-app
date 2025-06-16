@@ -792,54 +792,22 @@
   color: #2ecc71;
 }
 
-/* Character Cards in Case Style */
-.character-case-container {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 15px;
-  padding: 20px;
-  text-align: center;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  position: relative;
-  overflow: hidden;
+/* Active Character Styles for Case Containers */
+.case-container.active-character {
+  border: 3px solid #27ae60 !important;
+  box-shadow: 0 0 20px rgba(39, 174, 96, 0.5) !important;
 }
 
-.character-case-container:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.character-case-container.active-character {
-  border: 3px solid #27ae60;
-  box-shadow: 0 0 20px rgba(39, 174, 96, 0.5);
-  background: rgba(39, 174, 96, 0.1);
-}
-
-.character-case-container.active-character::before {
+.case-container.active-character::after {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
-  background: #27ae60;
-  animation: pulse 2s infinite;
-}
-
-.character-rarity {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  padding: 8px 12px;
+  bottom: 0;
+  background: rgba(39, 174, 96, 0.1);
+  pointer-events: none;
   border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: bold;
-  margin-bottom: 15px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .active-indicator {
@@ -849,43 +817,12 @@
   animation: pulse 2s infinite;
 }
 
-.character-image {
-  width: 80px;
-  height: 80px;
-  object-fit: contain;
-  margin: 10px auto 15px;
-  border-radius: 50%;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.1);
-  padding: 5px;
-}
-
-.character-name {
-  font-size: 1.1rem;
-  font-weight: bold;
-  color: white;
-  margin-bottom: 8px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-}
-
-.character-income {
-  font-size: 1rem;
-  color: #f39c12;
-  font-weight: bold;
-  margin-bottom: 5px;
-}
-
-.character-rarity-text {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 15px;
-  text-transform: capitalize;
-}
-
+/* Character Action Buttons */
 .character-actions {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-top: 10px;
 }
 
 .character-upgrade-btn,
@@ -933,23 +870,6 @@
   background: #7f8c8d;
   cursor: not-allowed;
   opacity: 0.6;
-}
-
-/* Rarity specific styles */
-.character-case-container.rarity-common .character-rarity {
-  background: linear-gradient(135deg, #95a5a6, #7f8c8d);
-}
-
-.character-case-container.rarity-rare .character-rarity {
-  background: linear-gradient(135deg, #3498db, #2980b9);
-}
-
-.character-case-container.rarity-epic .character-rarity {
-  background: linear-gradient(135deg, #9b59b6, #8e44ad);
-}
-
-.character-case-container.rarity-legendary .character-rarity {
-  background: linear-gradient(135deg, #f39c12, #e67e22);
 }
 
 /* Responsive Design */
