@@ -9,7 +9,6 @@ export default function ShopWithService() {
   const {
     cases,
     inventory,
-    selectedCharacter,
     loading,
     error,
     fetchCases,
@@ -17,7 +16,6 @@ export default function ShopWithService() {
     purchaseCase,
     upgradeCharacter,
     setActiveCharacter,
-    selectCharacter,
     clearError
   } = useShop();
   
@@ -36,18 +34,14 @@ export default function ShopWithService() {
     setActiveTab(tab);
   };
 
-  const handleSelectCharacter = (character) => {
-    selectCharacter(character);
-  };
-
   const getUserDiamonds = () => {
     return gameStatus?.diamonds_balance || 0;
   };
 
-  const handleUpgradeCharacter = async () => {
-    if (!selectedCharacter || upgrading) return;
+  const handleUpgradeCharacterDirect = async (character) => {
+    if (upgrading) return;
     
-    const upgradeCost = shopService.calculateUpgradeCost(selectedCharacter.level);
+    const upgradeCost = shopService.calculateUpgradeCost(character.level);
     const currentDiamonds = getUserDiamonds();
     
     if (currentDiamonds < upgradeCost) {
@@ -57,11 +51,11 @@ export default function ShopWithService() {
 
     setUpgrading(true);
     try {
-      const result = await upgradeCharacter(selectedCharacter.id);
+      const result = await upgradeCharacter(character.id);
       if (result.success) {
         // Refresh game status to get updated diamond balance
         await fetchGameStatus();
-        alert(`Character upgraded to level ${result.new_level}!`);
+        alert(`${character.character_name || character.name} upgraded to level ${result.new_level}!`);
       } else {
         alert(result.error || 'Error upgrading character');
       }
@@ -73,14 +67,14 @@ export default function ShopWithService() {
     }
   };
 
-  const handleSetActiveCharacter = async () => {
-    if (!selectedCharacter || settingActive) return;
+  const handleSetActiveCharacterDirect = async (character) => {
+    if (settingActive) return;
 
     setSettingActive(true);
     try {
-      const result = await setActiveCharacter(selectedCharacter.id);
+      const result = await setActiveCharacter(character.id);
       if (result.success) {
-        alert(`${selectedCharacter.character_name || selectedCharacter.name} is now the active character!`);
+        alert(`${character.character_name || character.name} is now the active character!`);
       } else {
         alert(result.error || 'Error setting active character');
       }
@@ -396,150 +390,74 @@ export default function ShopWithService() {
       )}
 
       {/* Inventory Content */}
-      {activeTab === 'inventory' && (
-        <div className="inventory-tab-content">
-          <div className="inventory-header-tab">
-            <h3>Character Inventory</h3>
-            <div className="inventory-stats-tab">
-              <span>Total characters: {inventory.filter(item => item.character_name || item.name).length}</span>
-              <span>💎 {getUserDiamonds()}</span>
+              {activeTab === 'inventory' && (
+          <div className="inventory-tab-content">
+            <div className="inventory-header-simple">
+              <h3>💎 {getUserDiamonds()} Diamonds</h3>
             </div>
-          </div>
-
-          <div className="inventory-main-content">
-            <div className="characters-grid-tab">
-              {inventory.filter(item => item.character_name || item.name).length === 0 ? (
-                <div className="empty-inventory-tab">
-                  <p>You don't have any characters yet</p>
-                  <p>Open cases in the shop to get characters!</p>
-                </div>
-              ) : (
-                inventory.filter(item => item.character_name || item.name).map((character) => (
-                  <div
-                    key={character.id}
-                    className={`character-card-tab ${selectedCharacter?.id === character.id ? 'selected' : ''} ${getRarityClass(character.income_rate)}`}
-                    onClick={() => handleSelectCharacter(character)}
-                    style={{ '--rarity-color': getRarityColor(character.income_rate) }}
-                  >
-                    <div className="character-card-header-tab">
-                      <div className="character-level-tab">Lvl. {character.level}</div>
-                      {character.is_active && <div className="active-badge-tab">Active</div>}
-                    </div>
-                    
-                    <div className="character-avatar-tab">
-                      <div className="character-icon-tab">
-                        {getCharacterIcon(character)}
-                      </div>
-                    </div>
-
-                    <div className="character-info-tab">
-                      <h4 className="character-name-tab">{character.character_name || character.name}</h4>
-                      <div className="character-stats-tab">
-                        <div className="stat-tab">
-                          <span className="stat-label-tab">Income/hour:</span>
-                          <span className="stat-value-tab">{character.income_rate}</span>
-                        </div>
-                        <div className="stat-tab">
-                          <span className="stat-label-tab">Rarity:</span>
-                          <span className={`stat-value-tab ${getRarityClass(character.income_rate)}`}>
-                            {shopService.getCharacterRarity(character.income_rate)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="character-card-footer-tab">
-                      <div className="upgrade-cost-tab">
-                        Upgrade: {shopService.calculateUpgradeCost(character.level)} 💎
-                      </div>
-                    </div>
+            <div className="inventory-main-content">
+              <div className="characters-grid-tab">
+                {inventory.filter(item => item.character_name || item.name).length === 0 ? (
+                  <div className="empty-inventory-tab">
+                    <p>You don't have any characters yet</p>
+                    <p>Open cases in the shop to get characters!</p>
                   </div>
-                ))
-              )}
-            </div>
-
-            {selectedCharacter && (
-              <div className="character-details-tab">
-                <div className="details-header-tab">
-                  <h4>Selected Character</h4>
-                  <button 
-                    className="close-details-tab"
-                    onClick={() => selectCharacter(null)}
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <div className="details-content-tab">
-                  <div className="character-preview-tab">
-                    <div className="character-avatar-large-tab">
-                      <div className="character-icon-large-tab">
-                        {getCharacterIcon(selectedCharacter)}
-                      </div>
-                    </div>
-                    
-                    <div className="character-details-info-tab">
-                      <h5>{selectedCharacter.character_name || selectedCharacter.name}</h5>
-                      <div className="detail-stats-tab">
-                        <div className="detail-stat-tab">
-                          <span>Level:</span>
-                          <span>{selectedCharacter.level}</span>
-                        </div>
-                        <div className="detail-stat-tab">
-                          <span>Hourly income:</span>
-                          <span>{selectedCharacter.income_rate} 💎</span>
-                        </div>
-                        <div className="detail-stat-tab">
-                          <span>Rarity:</span>
-                          <span className={getRarityClass(selectedCharacter.income_rate)}>
-                            {shopService.getCharacterRarity(selectedCharacter.income_rate)}
-                          </span>
-                        </div>
-                        <div className="detail-stat-tab">
-                          <span>Status:</span>
-                          <span>{selectedCharacter.is_active ? 'Active' : 'Inactive'}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="character-actions-tab">
-                    <button
-                      className="upgrade-button-tab"
-                      onClick={handleUpgradeCharacter}
-                      disabled={upgrading || getUserDiamonds() < shopService.calculateUpgradeCost(selectedCharacter.level)}
+                ) : (
+                  inventory.filter(item => item.character_name || item.name).map((character) => (
+                    <div
+                      key={character.id}
+                      className={`character-card-compact ${getRarityClass(character.income_rate)}`}
+                      style={{ '--rarity-color': getRarityColor(character.income_rate) }}
                     >
-                      {upgrading ? 'Upgrading...' : `Upgrade for ${shopService.calculateUpgradeCost(selectedCharacter.level)} 💎`}
-                    </button>
-
-                    {!selectedCharacter.is_active && (
-                      <button
-                        className="activate-button-tab"
-                        onClick={handleSetActiveCharacter}
-                        disabled={settingActive}
-                      >
-                        {settingActive ? 'Activating...' : 'Set as Active'}
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="upgrade-preview-tab">
-                    <h6>After upgrade:</h6>
-                    <div className="upgrade-stats-tab">
-                      <div className="upgrade-stat-tab">
-                        <span>Level:</span>
-                        <span>{selectedCharacter.level} → {selectedCharacter.level + 1}</span>
+                      <div className="character-card-header-compact">
+                        <div className="character-level-compact">Lvl. {character.level}</div>
+                        {character.is_active && <div className="active-badge-compact">Active</div>}
                       </div>
-                      <div className="upgrade-stat-tab">
-                        <span>Hourly income:</span>
-                        <span>{selectedCharacter.income_rate} → {Math.floor(selectedCharacter.income_rate * 1.5)} 💎</span>
+                      
+                      <div className="character-avatar-compact">
+                        <div className="character-icon-compact">
+                          {getCharacterIcon(character)}
+                        </div>
+                      </div>
+
+                      <div className="character-info-compact">
+                        <h4 className="character-name-compact">{character.character_name || character.name}</h4>
+                        <div className="character-stats-compact">
+                          <div className="stat-compact">
+                            <span>{character.income_rate}/h 💎</span>
+                          </div>
+                          <div className="stat-compact">
+                            <span className={getRarityClass(character.income_rate)}>
+                              {shopService.getCharacterRarity(character.income_rate)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="character-actions-compact">
+                        <button
+                          className="upgrade-button-compact"
+                          onClick={() => handleUpgradeCharacterDirect(character)}
+                          disabled={upgrading || getUserDiamonds() < shopService.calculateUpgradeCost(character.level)}
+                        >
+                          ⬆️ {shopService.calculateUpgradeCost(character.level)}💎
+                        </button>
+
+                        {!character.is_active && (
+                          <button
+                            className="activate-button-compact"
+                            onClick={() => handleSetActiveCharacterDirect(character)}
+                            disabled={settingActive}
+                          >
+                            ⭐ Activate
+                          </button>
+                        )}
                       </div>
                     </div>
-                  </div>
-                </div>
+                  ))
+                )}
               </div>
-            )}
-          </div>
+            </div>
         </div>
       )}
     </div>
