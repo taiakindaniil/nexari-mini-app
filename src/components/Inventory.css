@@ -828,81 +828,77 @@
 .character-actions {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 6px;
+  margin-top: 8px;
+  width: 100%;
 }
 
 .character-upgrade-btn,
 .character-activate-btn {
-  padding: 12px 20px;
+  padding: 8px 12px;
   border: none;
-  border-radius: 15px;
-  font-size: 0.9rem;
-  font-weight: 700;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 36px;
+  backdrop-filter: blur(10px);
 }
 
-.character-upgrade-btn::before,
-.character-activate-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-  transition: left 0.5s ease;
-}
-
-.character-upgrade-btn:hover::before,
-.character-activate-btn:hover::before {
-  left: 100%;
+.btn-icon {
+  font-size: 0.9rem;
+  opacity: 0.9;
 }
 
 .character-upgrade-btn {
-  background: linear-gradient(135deg, #fd7e14, #e55100);
+  background: rgba(255, 152, 0, 0.9);
   color: white;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 152, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.2);
 }
 
 .character-upgrade-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #e55100, #d84315);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(253, 126, 20, 0.5);
+  background: rgba(255, 152, 0, 1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+  border-color: rgba(255, 152, 0, 0.5);
 }
 
 .character-upgrade-btn:disabled {
-  background: linear-gradient(135deg, #7f8c8d, #6c757d);
+  background: rgba(108, 117, 125, 0.6);
+  color: rgba(255, 255, 255, 0.5);
   cursor: not-allowed;
-  opacity: 0.6;
-  transform: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: rgba(108, 117, 125, 0.3);
+  box-shadow: none;
 }
 
 .character-activate-btn {
-  background: linear-gradient(135deg, #28a745, #20c997);
+  background: rgba(40, 167, 69, 0.9);
   color: white;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(40, 167, 69, 0.3);
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
 }
 
 .character-activate-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #20c997, #17a2b8);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(40, 167, 69, 0.5);
+  background: rgba(40, 167, 69, 1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+  border-color: rgba(40, 167, 69, 0.5);
 }
 
 .character-activate-btn:disabled {
-  background: linear-gradient(135deg, #7f8c8d, #6c757d);
+  background: rgba(108, 117, 125, 0.6);
+  color: rgba(255, 255, 255, 0.5);
   cursor: not-allowed;
-  opacity: 0.6;
-  transform: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: rgba(108, 117, 125, 0.3);
+  box-shadow: none;
 }
 
 /* Responsive Design */

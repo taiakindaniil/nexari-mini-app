@@ -388,8 +388,8 @@ export default function ShopWithService() {
                       className={`case-container ${getRarityClass(character.income_rate)} ${character.is_active ? 'active-character' : ''}`}
                     >
                       <div className={`case-rarity ${getRarityClass(character.income_rate)}-rarity`}>
-                        {shopService.getCharacterRarity(character.income_rate)} - Level {character.level}
-                        {character.is_active && <span className="active-indicator">● ACTIVE</span>}
+                        {shopService.getCharacterRarity(character.income_rate)}
+                        {character.is_active && <span className="active-indicator"> ● ACTIVE</span>}
                       </div>
                       
                       <img 
@@ -401,19 +401,16 @@ export default function ShopWithService() {
                       <div className="case-name">{character.character_name || character.name}</div>
                       
                       <div className="case-description">
-                        {character.income_rate} 💎/hour
+                        Level {character.level} • {character.income_rate} 💎/hour
                       </div>
                       
-                      <div className="case-price">
-                        💎 {character.income_rate}/hour
-                      </div>
-
                       <div className="character-actions">
                         <button
                           className="character-upgrade-btn"
                           onClick={() => handleUpgradeCharacterDirect(character)}
                           disabled={upgrading || getUserDiamonds() < shopService.calculateUpgradeCost(character.level)}
                         >
+                          <span className="btn-icon">⬆️</span>
                           Upgrade {shopService.calculateUpgradeCost(character.level)} 💎
                         </button>
 
@@ -423,6 +420,7 @@ export default function ShopWithService() {
                             onClick={() => handleSetActiveCharacterDirect(character)}
                             disabled={settingActive}
                           >
+                            <span className="btn-icon">⭐</span>
                             Set Active
                           </button>
                         )}
