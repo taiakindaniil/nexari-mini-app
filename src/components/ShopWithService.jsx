@@ -388,7 +388,7 @@ export default function ShopWithService() {
                       className={`case-container ${getRarityClass(character.income_rate)} ${character.is_active ? 'active-character' : ''}`}
                     >
                       <div className={`case-rarity ${getRarityClass(character.income_rate)}-rarity`}>
-                        Level {character.level}
+                        {shopService.getCharacterRarity(character.income_rate)} - Level {character.level}
                         {character.is_active && <span className="active-indicator">● ACTIVE</span>}
                       </div>
                       
@@ -405,7 +405,7 @@ export default function ShopWithService() {
                       </div>
                       
                       <div className="case-price">
-                        {shopService.getCharacterRarity(character.income_rate)}
+                        💎 {character.income_rate}/hour
                       </div>
 
                       <div className="character-actions">
