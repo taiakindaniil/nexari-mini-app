@@ -5,7 +5,7 @@ import shopService from '../api/services/shopService.ts';
 import './Inventory.css';
 
 export default function ShopWithService() {
-  const { user, updateUser, fetchGameStatus } = useGame();
+  const { gameStatus, fetchGameStatus } = useGame();
   const {
     cases,
     inventory,
@@ -40,13 +40,18 @@ export default function ShopWithService() {
     selectCharacter(character);
   };
 
+  const getUserDiamonds = () => {
+    return gameStatus?.diamonds_balance || 0;
+  };
+
   const handleUpgradeCharacter = async () => {
     if (!selectedCharacter || upgrading) return;
     
     const upgradeCost = shopService.calculateUpgradeCost(selectedCharacter.level);
+    const currentDiamonds = getUserDiamonds();
     
-    if (user.diamonds < upgradeCost) {
-      alert(`Not enough diamonds! Required: ${upgradeCost}, you have: ${user.diamonds}`);
+    if (currentDiamonds < upgradeCost) {
+      alert(`Not enough diamonds! Required: ${upgradeCost}, you have: ${currentDiamonds}`);
       return;
     }
 
@@ -54,8 +59,8 @@ export default function ShopWithService() {
     try {
       const result = await upgradeCharacter(selectedCharacter.id);
       if (result.success) {
-        // Update user diamonds
-        updateUser({ diamonds: user.diamonds - upgradeCost });
+        // Refresh game status to get updated diamond balance
+        await fetchGameStatus();
         alert(`Character upgraded to level ${result.new_level}!`);
       } else {
         alert(result.error || 'Error upgrading character');
@@ -278,7 +283,7 @@ export default function ShopWithService() {
     spinButton.addEventListener("click", startRoulette);
   };
 
-  if (loading) {
+  if (loading || !gameStatus) {
     return (
       <div className="shop-container visible">
         <div className="loading-container">
@@ -381,7 +386,7 @@ export default function ShopWithService() {
             <h3>Character Inventory</h3>
             <div className="inventory-stats-tab">
               <span>Total characters: {inventory.filter(item => item.character_name).length}</span>
-              <span>💎 {user.diamonds}</span>
+              <span>💎 {getUserDiamonds()}</span>
             </div>
           </div>
 
@@ -496,7 +501,7 @@ export default function ShopWithService() {
                     <button
                       className="upgrade-button-tab"
                       onClick={handleUpgradeCharacter}
-                      disabled={upgrading || user.diamonds < shopService.calculateUpgradeCost(selectedCharacter.level)}
+                      disabled={upgrading || getUserDiamonds() < shopService.calculateUpgradeCost(selectedCharacter.level)}
                     >
                       {upgrading ? 'Upgrading...' : `Upgrade for ${shopService.calculateUpgradeCost(selectedCharacter.level)} 💎`}
                     </button>
