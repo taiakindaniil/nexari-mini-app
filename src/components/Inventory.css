@@ -407,6 +407,7 @@
 
 /* Inventory Tab Styles (for ShopWithService integration) */
 .inventory-tab-content {
+  width: 100%;
   padding: 20px;
   color: white;
 }
@@ -455,9 +456,9 @@
   align-items: start;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 600px) {
   .characters-grid-tab {
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fit,minmax(250px,1fr));
     gap: 1rem;
     padding: 1rem;
   }

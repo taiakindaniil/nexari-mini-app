@@ -19,6 +19,7 @@ export interface InventoryItem {
   level: number;
   income_rate: number;
   src: string;
+  is_active: boolean;
   is_mutated: boolean;
   background: string;
   experience: number;
