@@ -941,11 +941,6 @@
     position: static;
   }
   
-  .characters-grid-tab {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-  
   .inventory-header-tab {
     flex-direction: column;
     gap: 12px;

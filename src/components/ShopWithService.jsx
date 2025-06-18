@@ -389,7 +389,6 @@ export default function ShopWithService() {
                     >
                       <div className={`case-rarity ${getRarityClass(character.income_rate)}-rarity`}>
                         {shopService.getCharacterRarity(character.income_rate)}
-                        {character.is_active && <span className="active-indicator"> ● ACTIVE</span>}
                       </div>
                       
                       <img 
