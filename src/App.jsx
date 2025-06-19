@@ -1,7 +1,7 @@
 import React from 'react';
 import './App.css';
 import Home from './components/Home';
-import Shop from './components/ShopWithService';
+import Shop from './components/Shop';
 import Market from './components/Market';
 import Quests from './components/Quests';
 import Games from './components/Games';

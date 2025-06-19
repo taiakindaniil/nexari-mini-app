@@ -1,99 +1,286 @@
-import React, { useState } from 'react';
-import { useGameAPI } from '../hooks/useGameAPI';
-import { useCharacters } from '../hooks/useCharacters';
+import React, { useState, useEffect } from 'react';
+import { useGame } from '../context/GameContext';
+import { useShop } from '../api/hooks/useShop.ts';
+import shopService from '../api/services/shopService.ts';
+import './Inventory.css';
 
 export default function Shop() {
-  const { gameStatus } = useGameAPI();
-  const { 
-    shopCharacters, 
-    inventory, 
-    loading, 
+  const { gameStatus, fetchGameStatus } = useGame();
+  const {
+    cases,
+    inventory,
+    loading,
     error,
-    purchaseCharacter, 
-    upgradeCharacter, 
-    setActiveCharacter 
-  } = useCharacters();
+    fetchCases,
+    fetchInventory,
+    purchaseCase,
+    upgradeCharacter,
+    setActiveCharacter,
+    clearError
+  } = useShop();
   
-  const [activeTab, setActiveTab] = useState('shop');
-  const [purchaseLoading, setPurchaseLoading] = useState(null);
-  const [upgradeLoading, setUpgradeLoading] = useState(null);
+  const [isAnimationActive, setIsAnimationActive] = useState(false);
+  const [activeTab, setActiveTab] = useState('cases');
+  const [upgrading, setUpgrading] = useState(false);
+  const [settingActive, setSettingActive] = useState(false);
+
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchCases();
+    fetchInventory();
+  }, [fetchCases, fetchInventory]);
 
   const handleTabSwitch = (tab) => {
     setActiveTab(tab);
   };
 
-  const handlePurchase = async (character) => {
-    if (purchaseLoading) return;
-    
-    setPurchaseLoading(character.id);
-    try {
-      await purchaseCharacter(character.id);
-      showMessage(`Successfully purchased ${character.name}!`);
-    } catch (error) {
-      alert(`Failed to purchase character: ${error.message}`);
-    }
-    setPurchaseLoading(null);
+  const getUserDiamonds = () => {
+    return gameStatus?.diamonds_balance || 0;
   };
 
-  const handleUpgrade = async (userCharacter) => {
-    if (upgradeLoading) return;
+  const handleUpgradeCharacterDirect = async (character) => {
+    if (upgrading) return;
     
-    setUpgradeLoading(userCharacter.id);
-    try {
-      const result = await upgradeCharacter(userCharacter.id);
-      showMessage(`${userCharacter.name} upgraded to level ${result.character.level}!`);
-    } catch (error) {
-      alert(`Failed to upgrade character: ${error.message}`);
+    const upgradeCost = shopService.calculateUpgradeCost(character.level);
+    const currentDiamonds = getUserDiamonds();
+    
+    if (currentDiamonds < upgradeCost) {
+      alert(`Not enough diamonds! Required: ${upgradeCost}, you have: ${currentDiamonds}`);
+      return;
     }
-    setUpgradeLoading(null);
-  };
 
-  const handleSetActive = async (userCharacter) => {
+    setUpgrading(true);
     try {
-      await setActiveCharacter(userCharacter.id);
-      showMessage(`${userCharacter.name} is now farming!`);
-    } catch (error) {
-      alert(`Failed to set active character: ${error.message}`);
+      const result = await upgradeCharacter(character.id);
+      if (result.success) {
+        // Refresh game status to get updated diamond balance
+        await fetchGameStatus();
+        alert(`${character.character_name || character.name} upgraded to level ${result.new_level}!`);
+      } else {
+        alert(result.error || 'Error upgrading character');
+      }
+    } catch (err) {
+      console.error('Upgrade error:', err);
+      alert('Error upgrading character');
+    } finally {
+      setUpgrading(false);
     }
   };
 
-  const showMessage = (text) => {
-    const msg = document.createElement('div');
-    msg.textContent = text;
-    msg.style.cssText = `
-      position: fixed;
-      top: 20%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: #000;
-      color: #fff;
-      padding: 1rem;
-      border-radius: 12px;
-      z-index: 9999;
-      max-width: 80%;
-    `;
-    document.body.appendChild(msg);
-    
-    setTimeout(() => {
-      msg.remove();
-    }, 2000);
+  const handleSetActiveCharacterDirect = async (character) => {
+    if (settingActive) return;
+
+    setSettingActive(true);
+    try {
+      const result = await setActiveCharacter(character.id);
+      if (result.success) {
+        alert(`${character.character_name || character.name} is now the active character!`);
+      } else {
+        alert(result.error || 'Error setting active character');
+      }
+    } catch (err) {
+      console.error('Set active error:', err);
+      alert('Error setting active character');
+    } finally {
+      setSettingActive(false);
+    }
   };
 
-  const getRarityColor = (rarity) => {
-    const colors = {
-      common: '#6B7280',
-      rare: '#3B82F6',
-      epic: '#8B5CF6',
-      legendary: '#F59E0B'
+  const getRarityClass = (incomeRate) => {
+    const rarity = shopService.getCharacterRarity(incomeRate);
+    return `rarity-${rarity}`;
+  };
+
+
+
+  const handleCaseClick = (caseData) => {
+    if (isAnimationActive) return;
+    
+    const paymentMethod = shopService.getPaymentMethod(caseData);
+    showCaseAnimation(caseData, paymentMethod);
+  };
+
+  const showCaseAnimation = (caseData, paymentMethod) => {
+    setIsAnimationActive(true);
+
+    // Create overlay
+    const overlay = document.createElement("div");
+    overlay.className = "case-animation-overlay hidden";
+    
+    const message = document.createElement("div");
+    message.className = "case-animation-message hidden";
+    
+    const priceText = shopService.formatPriceText(caseData);
+    message.textContent = `Open ${caseData.name} for ${priceText}!`;
+    
+    const animationContainer = document.createElement("div");
+    animationContainer.className = "case-animation-container";
+    
+    const rouletteStrip = document.createElement("div");
+    rouletteStrip.className = "roulette-strip";
+    animationContainer.appendChild(rouletteStrip);
+    
+    const animationBar = document.createElement("div");
+    animationBar.className = "animation-bar";
+    animationContainer.appendChild(animationBar);
+    
+    const spinButton = document.createElement("button");
+    spinButton.className = "case-animation-button";
+    spinButton.textContent = "Open Case";
+    
+    const cancelButton = document.createElement("button");
+    cancelButton.className = "case-animation-cancel";
+    cancelButton.textContent = "Cancel";
+    
+    overlay.appendChild(message);
+    overlay.appendChild(animationContainer);
+    overlay.appendChild(spinButton);
+    overlay.appendChild(cancelButton);
+    document.body.appendChild(overlay);
+
+    // Show animation
+    requestAnimationFrame(() => {
+      overlay.classList.remove("hidden");
+      overlay.classList.add("visible");
+      message.classList.remove("hidden");
+      message.classList.add("visible");
+      setTimeout(() => {
+        spinButton.classList.add("visible");
+        cancelButton.classList.add("visible");
+      }, 300);
+    });
+
+    const onCancel = () => {
+      overlay.classList.remove("visible");
+      overlay.classList.add("hidden");
+      message.classList.remove("visible");
+      message.classList.add("hidden");
+      spinButton.classList.remove("visible");
+      cancelButton.classList.remove("visible");
+      setTimeout(() => {
+        overlay.remove();
+        setIsAnimationActive(false);
+      }, 500);
     };
-    return colors[rarity] || colors.common;
+
+    const startRoulette = async () => {
+      try {
+        spinButton.style.pointerEvents = "none";
+        spinButton.style.opacity = "0.5";
+        spinButton.textContent = "Opening...";
+        
+        // Purchase case using the service
+        const result = await purchaseCase({
+          case_id: caseData.id,
+          payment_method: paymentMethod
+        });
+        
+        if (!result.success) {
+          alert(result.error || 'Failed to open case');
+          onCancel();
+          return;
+        }
+        
+        const reward = result.reward;
+        
+        // Generate roulette items with the actual reward
+        const rouletteItems = shopService.generateRouletteItems(reward);
+        
+        // Render roulette
+        rouletteStrip.innerHTML = "";
+        rouletteItems.forEach((item, index) => {
+          const itemDiv = document.createElement("div");
+          itemDiv.className = "roulette-item";
+          itemDiv.style.background = item.background;
+          
+          const bgDiv = document.createElement("div");
+          bgDiv.className = "animation-background";
+          bgDiv.style.background = item.background;
+          itemDiv.appendChild(bgDiv);
+
+          const img = document.createElement("img");
+          img.src = item.src;
+          img.alt = item.name;
+          img.className = "animation-character";
+          if (item.is_mutated && item.name !== "Diamonds") {
+            img.className += " mutated";
+          }
+          itemDiv.appendChild(img);
+
+          if (index === 19) {
+            itemDiv.dataset.winner = "true";
+          }
+          rouletteStrip.appendChild(itemDiv);
+        });
+        
+        rouletteStrip.style.opacity = "1";
+        rouletteStrip.style.animation = "roulette-spin 5s cubic-bezier(0.1, 0.7, 0.3, 1) forwards";
+
+        const onAnimationEnd = () => {
+          const isMobile = window.innerWidth <= 600;
+          rouletteStrip.style.transform = isMobile ? "translateX(-2008px)" : "translateX(-2434px)";
+          
+          const winnerIndex = 19;
+          const winnerItem = rouletteStrip.children[winnerIndex];
+          
+          if (winnerItem) {
+            const img = winnerItem.querySelector("img");
+            if (img) {
+              img.src = reward.src;
+              img.alt = reward.name;
+              img.className = "animation-character";
+              if (reward.is_mutated && reward.name !== "Diamonds") {
+                img.className += " mutated";
+              }
+            }
+            
+            const bgDiv = winnerItem.querySelector(".animation-background");
+            if (bgDiv) {
+              bgDiv.style.background = reward.background;
+            }
+            
+            winnerItem.style.background = reward.background;
+            winnerItem.classList.add("winner");
+            
+            let rewardText = reward.name;
+            if (reward.type === 'diamonds') {
+              rewardText = `${reward.value} Diamonds`;
+            } else if (reward.is_mutated) {
+              rewardText += " (Mutated)";
+            }
+            
+            message.textContent = `You won ${rewardText}!`;
+            
+            // Refresh game status
+            fetchGameStatus();
+            
+            setTimeout(() => {
+              onCancel();
+            }, 3000);
+          }
+          
+          rouletteStrip.removeEventListener("animationend", onAnimationEnd);
+        };
+
+        rouletteStrip.addEventListener("animationend", onAnimationEnd);
+        
+      } catch (err) {
+        console.error('Error opening case:', err);
+        alert('Failed to open case. Please try again.');
+        onCancel();
+      }
+    };
+
+    cancelButton.addEventListener("click", onCancel);
+    spinButton.addEventListener("click", startRoulette);
   };
 
-  if (loading && shopCharacters.length === 0 && inventory.length === 0) {
+  if (loading || !gameStatus) {
     return (
-      <div className="shop-content">
-        <div style={{ textAlign: 'center', padding: '50px' }}>
-          <p>Loading shop...</p>
+      <div className="shop-container visible">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <div>Loading shop...</div>
         </div>
       </div>
     );
@@ -101,318 +288,149 @@ export default function Shop() {
 
   if (error) {
     return (
-      <div className="shop-content">
-        <div style={{ textAlign: 'center', padding: '50px' }}>
-          <p>Error: {error}</p>
-          <button onClick={() => window.location.reload()}>Retry</button>
+      <div className="shop-container visible">
+        <div className="error-container">
+          <div className="error-message">{error}</div>
+          <button onClick={() => {
+            clearError();
+            fetchCases();
+            fetchInventory();
+          }}>
+            Retry
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="shop-content">
-      {/* Header with balance */}
-      <div className="shop-header" style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        padding: '20px',
-        backgroundColor: 'rgba(0,0,0,0.1)',
-        borderRadius: '10px',
-        marginBottom: '20px'
-      }}>
-        <h2>Character Shop</h2>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <img 
-            src="https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp" 
-            alt="Diamonds" 
-            style={{ width: '24px', height: '24px' }}
-          />
-          <span style={{ fontSize: '18px', fontWeight: 'bold' }}>
-            {Math.floor(gameStatus?.diamonds_balance || 0)}
-          </span>
-        </div>
-      </div>
-
-      {/* Tab Navigation */}
-      <div className="tab-navigation" style={{
-        display: 'flex',
-        marginBottom: '20px',
-        backgroundColor: 'rgba(0,0,0,0.1)',
-        borderRadius: '10px',
-        padding: '5px'
-      }}>
-        <button
-          className={`tab-button ${activeTab === 'shop' ? 'active' : ''}`}
-          onClick={() => handleTabSwitch('shop')}
-          style={{
-            flex: 1,
-            padding: '12px',
-            border: 'none',
-            backgroundColor: activeTab === 'shop' ? '#007bff' : 'transparent',
-            color: activeTab === 'shop' ? 'white' : '#ccc',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontWeight: 'bold'
-          }}
+    <div className="shop-container visible">
+      {/* Tab Switcher */}
+      <div className="tab-switcher">
+        <button 
+          className={`tab-button ${activeTab === 'cases' ? 'active' : ''}`}
+          onClick={() => handleTabSwitch('cases')}
         >
-          Shop ({shopCharacters.length})
+          <span className="tab-icon">📦</span>
+          Cases
         </button>
-        <button
+        <button 
           className={`tab-button ${activeTab === 'inventory' ? 'active' : ''}`}
           onClick={() => handleTabSwitch('inventory')}
-          style={{
-            flex: 1,
-            padding: '12px',
-            border: 'none',
-            backgroundColor: activeTab === 'inventory' ? '#007bff' : 'transparent',
-            color: activeTab === 'inventory' ? 'white' : '#ccc',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontWeight: 'bold'
-          }}
         >
-          Inventory ({inventory.length})
+          <span className="tab-icon">🎒</span>
+          Inventory
         </button>
       </div>
 
-      {/* Shop Tab */}
-      {activeTab === 'shop' && (
-        <div className="shop-grid">
-          {shopCharacters.map((character) => {
-            const isOwned = inventory.some(inv => inv.character_id === character.id);
-            const canAfford = (gameStatus?.diamonds_balance || 0) >= character.base_price;
-            const isPurchasing = purchaseLoading === character.id;
-            
-            return (
+      {/* Cases Content */}
+      {activeTab === 'cases' && (
+        <div className="cases-content">
+          <div className="cases-grid">
+            {cases.map((caseData) => (
               <div 
-                key={character.id} 
-                className="character-card"
-                style={{
-                  backgroundColor: 'rgba(0,0,0,0.1)',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  border: `2px solid ${getRarityColor(character.rarity)}`,
-                  opacity: isOwned ? 0.5 : 1
-                }}
+                key={caseData.id}
+                className={`case-container ${shopService.getRarityClass(caseData.rarity)}`} 
+                onClick={() => handleCaseClick(caseData)}
               >
-                <div style={{ textAlign: 'center', marginBottom: '12px' }}>
-                  <img 
-                    src={character.image_url} 
-                    alt={character.name}
-                    style={{
-                      width: '80px',
-                      height: '80px',
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                      border: `3px solid ${getRarityColor(character.rarity)}`
-                    }}
-                  />
+                <div className={`case-rarity ${shopService.getRarityClass(caseData.rarity)}-rarity`}>
+                  {shopService.getRarityLabel(caseData.rarity)}
                 </div>
-                
-                <h3 style={{ 
-                  textAlign: 'center', 
-                  margin: '8px 0',
-                  color: getRarityColor(character.rarity)
-                }}>
-                  {character.name}
-                </h3>
-                
-                <p style={{ 
-                  fontSize: '12px', 
-                  color: '#ccc', 
-                  textAlign: 'center',
-                  margin: '8px 0'
-                }}>
-                  {character.description}
-                </p>
-                
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  margin: '12px 0'
-                }}>
-                  <span style={{ fontSize: '12px' }}>
-                    {character.base_income_rate}/h
-                  </span>
-                  <span style={{ 
-                    fontSize: '12px',
-                    textTransform: 'capitalize',
-                    color: getRarityColor(character.rarity)
-                  }}>
-                    {character.rarity}
-                  </span>
+                <img 
+                  alt={caseData.name} 
+                  className="case-image" 
+                  src={caseData.image_url} 
+                />
+                <div className="case-name">{caseData.name}</div>
+                <div className="case-description">{caseData.description}</div>
+                <div className={`case-price ${caseData.is_free ? 'free' : ''}`}>
+                  {caseData.is_free ? (
+                    'Free'
+                  ) : caseData.price_diamonds ? (
+                    <>
+                      <img src="https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp" alt="Diamond" className="price-icon" />
+                      {caseData.price_diamonds} Diamonds
+                    </>
+                  ) : caseData.price_ton ? (
+                    <>
+                      <span className="ton-icon">💎</span>
+                      {caseData.price_ton} TON
+                    </>
+                  ) : (
+                    'Free'
+                  )}
                 </div>
-                
-                <button
-                  onClick={() => handlePurchase(character)}
-                  disabled={isOwned || !canAfford || isPurchasing}
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: 'none',
-                    borderRadius: '8px',
-                    backgroundColor: isOwned ? '#666' : !canAfford ? '#444' : '#28a745',
-                    color: 'white',
-                    cursor: isOwned || !canAfford ? 'not-allowed' : 'pointer',
-                    fontWeight: 'bold',
-                    opacity: isPurchasing ? 0.5 : 1
-                  }}
-                >
-                  {isPurchasing ? 'Purchasing...' : 
-                   isOwned ? 'Owned' : 
-                   !canAfford ? `Need ${character.base_price} 💎` :
-                   character.base_price === 0 ? 'Free' : `${character.base_price} 💎`}
-                </button>
+                {caseData.max_daily_opens && (
+                  <div className="daily-limit">
+                    Max {caseData.max_daily_opens}/day
+                  </div>
+                )}
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Inventory Tab */}
-      {activeTab === 'inventory' && (
-        <div className="inventory-grid">
-          {inventory.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '50px', color: '#ccc' }}>
-              <p>No characters in inventory</p>
-              <p>Purchase characters from the shop!</p>
-            </div>
-          ) : (
-            inventory.map((userCharacter) => {
-              const isUpgrading = upgradeLoading === userCharacter.id;
-              
-              return (
-                <div 
-                  key={userCharacter.id} 
-                  className="character-card"
-                  style={{
-                    backgroundColor: userCharacter.is_active ? 'rgba(40, 167, 69, 0.2)' : 'rgba(0,0,0,0.1)',
-                    borderRadius: '12px',
-                    padding: '16px',
-                    border: `2px solid ${userCharacter.is_active ? '#28a745' : getRarityColor(userCharacter.rarity)}`
-                  }}
-                >
-                  <div style={{ textAlign: 'center', marginBottom: '12px' }}>
-                    <img 
-                      src={userCharacter.image_url} 
-                      alt={userCharacter.name}
-                      style={{
-                        width: '80px',
-                        height: '80px',
-                        borderRadius: '50%',
-                        objectFit: 'cover',
-                        border: `3px solid ${getRarityColor(userCharacter.rarity)}`
-                      }}
-                    />
-                    {userCharacter.is_active && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '5px',
-                        right: '5px',
-                        backgroundColor: '#28a745',
-                        color: 'white',
-                        fontSize: '10px',
-                        padding: '2px 6px',
-                        borderRadius: '10px'
-                      }}>
-                        ACTIVE
+      {/* Inventory Content */}
+              {activeTab === 'inventory' && (
+          <div className="inventory-tab-content">
+            <div className="inventory-main-content">
+              <div className="characters-grid-tab">
+                {inventory.filter(item => item.character_name || item.name).length === 0 ? (
+                  <div className="empty-inventory-tab">
+                    <p>You don't have any characters yet</p>
+                    <p>Open cases in the shop to get characters!</p>
+                  </div>
+                ) : (
+                  inventory.filter(item => item.character_name || item.name).map((character) => (
+                    <div
+                      key={character.id}
+                      className={`case-container ${getRarityClass(character.income_rate)} ${character.is_active ? 'active-character' : ''}`}
+                    >
+                      <div className={`case-rarity ${getRarityClass(character.income_rate)}-rarity`}>
+                        {shopService.getCharacterRarity(character.income_rate)}
                       </div>
-                    )}
-                  </div>
-                  
-                  <h3 style={{ 
-                    textAlign: 'center', 
-                    margin: '8px 0',
-                    color: getRarityColor(userCharacter.rarity)
-                  }}>
-                    {userCharacter.name}
-                  </h3>
-                  
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    margin: '12px 0',
-                    fontSize: '12px'
-                  }}>
-                    <span>Level {userCharacter.level}</span>
-                    <span>{userCharacter.current_income_rate}/h</span>
-                  </div>
-                  
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    {!userCharacter.is_active && (
-                      <button
-                        onClick={() => handleSetActive(userCharacter)}
-                        style={{
-                          flex: 1,
-                          padding: '8px',
-                          border: 'none',
-                          borderRadius: '6px',
-                          backgroundColor: '#007bff',
-                          color: 'white',
-                          cursor: 'pointer',
-                          fontSize: '12px'
-                        }}
-                      >
-                        Set Active
-                      </button>
-                    )}
-                    
-                    {userCharacter.can_upgrade && (
-                      <button
-                        onClick={() => handleUpgrade(userCharacter)}
-                        disabled={!userCharacter.upgrade_cost || (gameStatus?.diamonds_balance || 0) < userCharacter.upgrade_cost || isUpgrading}
-                        style={{
-                          flex: 1,
-                          padding: '8px',
-                          border: 'none',
-                          borderRadius: '6px',
-                          backgroundColor: (gameStatus?.diamonds_balance || 0) >= (userCharacter.upgrade_cost || 0) ? '#ffc107' : '#666',
-                          color: 'white',
-                          cursor: (gameStatus?.diamonds_balance || 0) >= (userCharacter.upgrade_cost || 0) ? 'pointer' : 'not-allowed',
-                          fontSize: '12px',
-                          opacity: isUpgrading ? 0.5 : 1
-                        }}
-                      >
-                        {isUpgrading ? 'Upgrading...' : `Upgrade (${userCharacter.upgrade_cost} 💎)`}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })
-          )}
+                      
+                      <img 
+                        alt={character.character_name || character.name} 
+                        className="case-image" 
+                        src={character.src || character.image_url || `https://em-content.zobj.net/source/telegram/386/video-game_1f3ae.webp`}
+                      />
+                      
+                      <div className="case-name">{character.character_name || character.name}</div>
+                      
+                      <div className="case-description">
+                        Level {character.level} • {character.income_rate} 💎/hour
+                      </div>
+                      
+                      <div className="character-actions">
+                        <button
+                          className="character-upgrade-btn"
+                          onClick={() => handleUpgradeCharacterDirect(character)}
+                          disabled={upgrading || getUserDiamonds() < shopService.calculateUpgradeCost(character.level)}
+                        >
+                          <span className="btn-icon">⬆️</span>
+                          Upgrade {shopService.calculateUpgradeCost(character.level)} 💎
+                        </button>
+
+                        {!character.is_active && (
+                          <button
+                            className="character-activate-btn"
+                            onClick={() => handleSetActiveCharacterDirect(character)}
+                            disabled={settingActive}
+                          >
+                            <span className="btn-icon">⭐</span>
+                            Set Active
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
         </div>
       )}
-
-      <style jsx>{`
-        .shop-grid, .inventory-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-          gap: 16px;
-          padding: 20px 0;
-        }
-        
-        .character-card {
-          position: relative;
-          transition: all 0.3s ease;
-        }
-        
-        .character-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        
-        @media (max-width: 768px) {
-          .shop-grid, .inventory-grid {
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 12px;
-          }
-        }
-      `}</style>
     </div>
   );
 } 
