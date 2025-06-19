@@ -1,7 +1,11 @@
 import React from 'react';
 import './App.css';
 import Home from './components/Home';
+<<<<<<< HEAD
+import Shop from './components/Shop';
+=======
 import Shop from './components/ShopWithService';
+>>>>>>> 473bcf6 (fix: remove unused components)
 import Market from './components/Market';
 import Quests from './components/Quests';
 import Games from './components/Games';
