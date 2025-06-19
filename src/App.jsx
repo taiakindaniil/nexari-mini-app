@@ -1,10 +1,7 @@
 import React from 'react';
 import './App.css';
 import Home from './components/Home';
-import Shop from './components/Shop';
-import ShopNew from './components/ShopNew';
-import ShopAPI from './components/ShopAPI';
-import ShopWithService from './components/ShopWithService';
+import Shop from './components/ShopWithService';
 import Market from './components/Market';
 import Quests from './components/Quests';
 import Games from './components/Games';
@@ -27,7 +24,7 @@ function AppContent() {
       <Header />
       
       {currentScreen === 'home' && <Home />}
-      {currentScreen === 'shop' && <ShopWithService />}
+      {currentScreen === 'shop' && <Shop />}
       {currentScreen === 'market' && <Market />}
       {currentScreen === 'quests' && <Quests />}
       {currentScreen === 'games' && <Games />}

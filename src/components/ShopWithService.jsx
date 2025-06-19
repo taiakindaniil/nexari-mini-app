@@ -4,7 +4,7 @@ import { useShop } from '../api/hooks/useShop.ts';
 import shopService from '../api/services/shopService.ts';
 import './Inventory.css';
 
-export default function ShopWithService() {
+export default function Shop() {
   const { gameStatus, fetchGameStatus } = useGame();
   const {
     cases,
