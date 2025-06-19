@@ -91,8 +91,6 @@ export default function Shop() {
     return `rarity-${rarity}`;
   };
 
-
-
   const handleCaseClick = (caseData) => {
     if (isAnimationActive) return;
     
@@ -100,7 +98,7 @@ export default function Shop() {
     showCaseAnimation(caseData, paymentMethod);
   };
 
-  const showCaseAnimation = (caseData, paymentMethod) => {
+  const showCaseAnimation = async (caseData, paymentMethod) => {
     setIsAnimationActive(true);
 
     // Create overlay
@@ -137,6 +135,20 @@ export default function Shop() {
     overlay.appendChild(spinButton);
     overlay.appendChild(cancelButton);
     document.body.appendChild(overlay);
+
+    try {
+      // Get real case details and generate roulette with actual possible rewards
+      const caseDetails = await shopService.getCaseDetails(caseData.id);
+      const previewItems = generateRealRouletteItems(caseDetails);
+      renderRouletteItems(rouletteStrip, previewItems);
+      rouletteStrip.style.opacity = "1";
+    } catch (error) {
+      console.error('Error loading case details:', error);
+      // Fallback to dummy items if case details fail
+      const previewItems = generatePreviewRouletteItems();
+      renderRouletteItems(rouletteStrip, previewItems);
+      rouletteStrip.style.opacity = "1";
+    }
 
     // Show animation
     requestAnimationFrame(() => {
@@ -183,37 +195,13 @@ export default function Shop() {
         
         const reward = result.reward;
         
-        // Generate roulette items with the actual reward
+        // Generate roulette items with the actual reward (using the same preview items but with real winner)
         const rouletteItems = shopService.generateRouletteItems(reward);
         
-        // Render roulette
+        // Re-render roulette with actual items and start animation
         rouletteStrip.innerHTML = "";
-        rouletteItems.forEach((item, index) => {
-          const itemDiv = document.createElement("div");
-          itemDiv.className = "roulette-item";
-          itemDiv.style.background = item.background;
-          
-          const bgDiv = document.createElement("div");
-          bgDiv.className = "animation-background";
-          bgDiv.style.background = item.background;
-          itemDiv.appendChild(bgDiv);
-
-          const img = document.createElement("img");
-          img.src = item.src;
-          img.alt = item.name;
-          img.className = "animation-character";
-          if (item.is_mutated && item.name !== "Diamonds") {
-            img.className += " mutated";
-          }
-          itemDiv.appendChild(img);
-
-          if (index === 19) {
-            itemDiv.dataset.winner = "true";
-          }
-          rouletteStrip.appendChild(itemDiv);
-        });
+        renderRouletteItems(rouletteStrip, rouletteItems);
         
-        rouletteStrip.style.opacity = "1";
         rouletteStrip.style.animation = "roulette-spin 5s cubic-bezier(0.1, 0.7, 0.3, 1) forwards";
 
         const onAnimationEnd = () => {
@@ -273,6 +261,175 @@ export default function Shop() {
 
     cancelButton.addEventListener("click", onCancel);
     spinButton.addEventListener("click", startRoulette);
+  };
+
+  // Helper function to generate real roulette items from case details
+  const generateRealRouletteItems = (caseDetails) => {
+    const backgrounds = [
+      'linear-gradient(135deg, #ffafbd, #ffc3a0)',
+      'linear-gradient(135deg, #89f7fe, #66a6ff)',
+      'linear-gradient(135deg, #f6d365, #fda085)',
+      'linear-gradient(135deg, #84fab0, #8fd3f4)',
+      '#ffcc70',
+      'linear-gradient(135deg, #d299c2, #fef9d7)',
+      '#000000',
+      'linear-gradient(135deg, #667eea, #764ba2)',
+      'linear-gradient(135deg, #ffecd2, #fcb69f)',
+      '#d3f8e2'
+    ];
+
+    const realItems = [];
+    
+    // Convert case rewards to roulette items
+    caseDetails.rewards.forEach(reward => {
+      if (reward.reward_type === 'diamonds') {
+        const diamondAmount = reward.diamonds_min || 100;
+        realItems.push({
+          type: 'diamonds',
+          name: 'Diamonds',
+          src: 'https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp',
+          background: backgrounds[5], // Use a specific background for diamonds
+          value: diamondAmount,
+          is_mutated: false
+        });
+      } else if (reward.reward_type === 'character' && reward.character_name) {
+        // Create character items with different mutation states
+        const baseCharacter = {
+          type: 'character',
+          name: reward.character_name,
+          src: getCharacterImageUrl(reward.character_name),
+          background: backgrounds[Math.floor(Math.random() * backgrounds.length)],
+          is_mutated: false
+        };
+        
+        realItems.push(baseCharacter);
+        
+        // Add mutated version if mutation is possible
+        if (reward.is_mutated_chance && reward.is_mutated_chance > 0) {
+          realItems.push({
+            ...baseCharacter,
+            is_mutated: true
+          });
+        }
+      }
+    });
+
+    // If no items found, fallback to basic items
+    if (realItems.length === 0) {
+      realItems.push({
+        type: 'diamonds',
+        name: 'Diamonds',
+        src: 'https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp',
+        background: backgrounds[5],
+        value: 100,
+        is_mutated: false
+      });
+    }
+
+    // Generate 40 items for roulette, randomly selecting from real items
+    const rouletteItems = [];
+    for (let i = 0; i < 40; i++) {
+      const randomItem = realItems[Math.floor(Math.random() * realItems.length)];
+      rouletteItems.push({
+        ...randomItem,
+        // Randomize diamond values and backgrounds for variety
+        value: randomItem.type === 'diamonds' ? 
+          Math.floor(Math.random() * 200) + 50 : randomItem.value,
+        background: backgrounds[Math.floor(Math.random() * backgrounds.length)]
+      });
+    }
+
+    return rouletteItems;
+  };
+
+  // Helper function to get character image URL
+  const getCharacterImageUrl = (characterName) => {
+    const characterImages = {
+      'Monkey': 'https://em-content.zobj.net/source/telegram/386/monkey-face_1f435.webp',
+      'Gorilla': 'https://em-content.zobj.net/source/telegram/386/gorilla_1f98d.webp',
+      'Dog': 'https://em-content.zobj.net/source/telegram/386/dog-face_1f436.webp',
+      'Cat': 'https://em-content.zobj.net/source/telegram/386/cat-face_1f431.webp',
+      'Lion': 'https://em-content.zobj.net/source/telegram/386/lion_1f981.webp',
+      'Robot': 'https://em-content.zobj.net/source/telegram/386/robot_1f916.webp',
+      'Alien': 'https://em-content.zobj.net/source/telegram/386/alien_1f47d.webp',
+      'Unicorn': 'https://em-content.zobj.net/source/telegram/386/unicorn_1f984.webp',
+      'Dragon': 'https://em-content.zobj.net/source/telegram/386/dragon_1f409.webp'
+    };
+    
+    return characterImages[characterName] || 'https://em-content.zobj.net/source/telegram/386/video-game_1f3ae.webp';
+  };
+
+  // Helper function to generate preview roulette items
+  const generatePreviewRouletteItems = () => {
+    const backgrounds = [
+      'linear-gradient(135deg, #ffafbd, #ffc3a0)',
+      'linear-gradient(135deg, #89f7fe, #66a6ff)',
+      'linear-gradient(135deg, #f6d365, #fda085)',
+      'linear-gradient(135deg, #84fab0, #8fd3f4)',
+      '#ffcc70',
+      'linear-gradient(135deg, #d299c2, #fef9d7)',
+      '#000000',
+      'linear-gradient(135deg, #667eea, #764ba2)',
+      'linear-gradient(135deg, #ffecd2, #fcb69f)',
+      '#d3f8e2'
+    ];
+
+    const dummyItems = [
+      { src: "https://em-content.zobj.net/source/telegram/386/monkey-face_1f435.webp", name: "Monkey" },
+      { src: "https://em-content.zobj.net/source/telegram/386/gorilla_1f98d.webp", name: "Gorilla" },
+      { src: "https://em-content.zobj.net/source/telegram/386/dog-face_1f436.webp", name: "Dog" },
+      { src: "https://em-content.zobj.net/source/telegram/386/cat-face_1f431.webp", name: "Cat" },
+      { src: "https://em-content.zobj.net/source/telegram/386/lion_1f981.webp", name: "Lion" },
+      { src: "https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp", name: "Diamonds" },
+      { src: "https://em-content.zobj.net/source/telegram/386/robot_1f916.webp", name: "Robot" },
+      { src: "https://em-content.zobj.net/source/telegram/386/alien_1f47d.webp", name: "Alien" },
+      { src: "https://em-content.zobj.net/source/telegram/386/unicorn_1f984.webp", name: "Unicorn" },
+      { src: "https://em-content.zobj.net/source/telegram/386/dragon_1f409.webp", name: "Dragon" }
+    ];
+
+    const previewItems = [];
+    
+    for (let i = 0; i < 40; i++) {
+      const randomItem = dummyItems[Math.floor(Math.random() * dummyItems.length)];
+      previewItems.push({
+        type: randomItem.name === "Diamonds" ? "diamonds" : "character",
+        name: randomItem.name,
+        src: randomItem.src,
+        is_mutated: randomItem.name !== "Diamonds" && Math.random() < 0.1,
+        background: backgrounds[Math.floor(Math.random() * backgrounds.length)],
+        value: randomItem.name === "Diamonds" ? Math.floor(Math.random() * 250) + 1 : undefined,
+      });
+    }
+
+    return previewItems;
+  };
+
+  // Helper function to render roulette items
+  const renderRouletteItems = (container, items) => {
+    items.forEach((item, index) => {
+      const itemDiv = document.createElement("div");
+      itemDiv.className = "roulette-item";
+      itemDiv.style.background = item.background;
+      
+      const bgDiv = document.createElement("div");
+      bgDiv.className = "animation-background";
+      bgDiv.style.background = item.background;
+      itemDiv.appendChild(bgDiv);
+
+      const img = document.createElement("img");
+      img.src = item.src;
+      img.alt = item.name;
+      img.className = "animation-character";
+      if (item.is_mutated && item.name !== "Diamonds") {
+        img.className += " mutated";
+      }
+      itemDiv.appendChild(img);
+
+      if (index === 19) {
+        itemDiv.dataset.winner = "true";
+      }
+      container.appendChild(itemDiv);
+    });
   };
 
   if (loading || !gameStatus) {
