@@ -18,12 +18,15 @@ export interface InventoryItem {
   name: string;
   level: number;
   current_income_rate: number;
+  income_rate?: number;  // Для совместимости
   src: string;
   is_active: boolean;
   is_mutated: boolean;
   background: string;
   experience: number;
   acquired_at: string;
+  rarity: string;  // Добавляем поле rarity
+  upgrade_cost?: number;  // Добавляем стоимость улучшения
 }
 
 export interface CaseReward {
@@ -238,7 +241,10 @@ class ShopService {
   /**
    * Get rarity CSS class
    */
-  getRarityClass(rarity: string): string {
+  getRarityClass(rarity: string | undefined | null): string {
+    if (!rarity) {
+      return 'common';  // Значение по умолчанию
+    }
     const rarityMap: Record<string, string> = {
       'common': 'common',
       'rare': 'rare',
@@ -253,7 +259,10 @@ class ShopService {
   /**
    * Get rarity label
    */
-  getRarityLabel(rarity: string): string {
+  getRarityLabel(rarity: string | undefined | null): string {
+    if (!rarity) {
+      return 'Common';  // Значение по умолчанию
+    }
     return rarity.charAt(0).toUpperCase() + rarity.slice(1);
   }
 
