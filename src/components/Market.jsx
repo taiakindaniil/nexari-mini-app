@@ -173,7 +173,7 @@ const Market = () => {
       </div>
 
       {/* Market Stats */}
-      {stats && (
+      {/* {stats && (
         <div className="market-stats">
           <div className="stat-item">
             <span className="stat-icon">📊</span>
@@ -188,7 +188,7 @@ const Market = () => {
             Total Transactions: {stats.total_transactions}
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Browse Market Tab */}
       {activeTab === 'browse' && (

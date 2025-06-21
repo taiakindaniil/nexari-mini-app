@@ -623,12 +623,12 @@ export default function Shop() {
                         )}
 
                         <button
-                          className="character-sell-btn"
+                          className="character-sell-btn-compact"
                           onClick={() => handleSellClick(character)}
                           disabled={character.is_active}
+                          title={character.is_active ? "Cannot sell active character" : "Sell this character"}
                         >
-                          <span className="btn-icon">💰</span>
-                          Sell
+                          💰
                         </button>
                       </div>
                     </div>
@@ -641,7 +641,7 @@ export default function Shop() {
 
       {/* Sell Modal */}
       {showSellModal && (
-        <div className="case-animation-overlay visible">
+        <div className="sell-modal-overlay visible">
           <div className="sell-modal">
             <h3>Sell Character</h3>
             {selectedCharacterForSale && (
