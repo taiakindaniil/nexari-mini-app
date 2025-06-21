@@ -160,7 +160,7 @@ const Market = () => {
           onClick={() => setActiveTab('browse')}
         >
           <span className="tab-icon">🛒</span>
-          Browse Market
+          Browse
         </button>
 
         <button 
