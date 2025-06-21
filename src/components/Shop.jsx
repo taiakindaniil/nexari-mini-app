@@ -287,7 +287,7 @@ export default function Shop() {
         realItems.push({
           type: 'diamonds',
           name: 'Diamonds',
-          src: 'https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp',
+          src: reward.image_url || 'https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp',
           background: backgrounds[5], // Use a specific background for diamonds
           value: diamondAmount,
           is_mutated: false
@@ -297,7 +297,7 @@ export default function Shop() {
         const baseCharacter = {
           type: 'character',
           name: reward.character_name,
-          src: getCharacterImageUrl(reward.character_name),
+          src: reward.image_url,
           background: backgrounds[Math.floor(Math.random() * backgrounds.length)],
           is_mutated: false
         };
@@ -340,23 +340,6 @@ export default function Shop() {
     }
 
     return rouletteItems;
-  };
-
-  // Helper function to get character image URL
-  const getCharacterImageUrl = (characterName) => {
-    const characterImages = {
-      'Monkey': 'https://em-content.zobj.net/source/telegram/386/monkey-face_1f435.webp',
-      'Gorilla': 'https://em-content.zobj.net/source/telegram/386/gorilla_1f98d.webp',
-      'Dog': 'https://em-content.zobj.net/source/telegram/386/dog-face_1f436.webp',
-      'Cat': 'https://em-content.zobj.net/source/telegram/386/cat-face_1f431.webp',
-      'Lion': 'https://em-content.zobj.net/source/telegram/386/lion_1f981.webp',
-      'Robot': 'https://em-content.zobj.net/source/telegram/386/robot_1f916.webp',
-      'Alien': 'https://em-content.zobj.net/source/telegram/386/alien_1f47d.webp',
-      'Unicorn': 'https://em-content.zobj.net/source/telegram/386/unicorn_1f984.webp',
-      'Dragon': 'https://em-content.zobj.net/source/telegram/386/dragon_1f409.webp'
-    };
-    
-    return characterImages[characterName] || 'https://em-content.zobj.net/source/telegram/386/video-game_1f3ae.webp';
   };
 
   // Helper function to generate preview roulette items

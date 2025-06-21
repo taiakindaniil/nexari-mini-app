@@ -100,6 +100,7 @@ export interface CaseDetails {
     diamonds_min?: number;
     diamonds_max?: number;
     character_name?: string;
+    image_url?: string;
     min_level?: number;
     max_level?: number;
     is_mutated_chance?: number;
