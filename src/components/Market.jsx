@@ -61,7 +61,7 @@ const INITIAL_MARKET_SKINS = [
 
 const Market = () => {
   const { gameStatus, fetchGameStatus } = useGame();
-  const { inventory, fetchInventory } = useShop();
+  const { fetchInventory } = useShop();
   const {
     listings,
     myListings,
@@ -69,7 +69,6 @@ const Market = () => {
     loading,
     error,
     fetchListings,
-    createListing,
     purchase,
     cancelListing,
     fetchMyListings,
@@ -77,16 +76,11 @@ const Market = () => {
     clearError
   } = useMarket();
 
-  const [activeTab, setActiveTab] = useState('browse'); // browse, my-listings, sell
+  const [activeTab, setActiveTab] = useState('browse'); // browse, my-listings
   const [characterFilter, setCharacterFilter] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [sortBy, setSortBy] = useState('newest');
-  
-  // Sell form state
-  const [selectedCharacter, setSelectedCharacter] = useState(null);
-  const [sellPrice, setSellPrice] = useState('');
-  const [selling, setSelling] = useState(false);
 
   // Fetch data on component mount
   useEffect(() => {
@@ -124,38 +118,7 @@ const Market = () => {
     }
   };
 
-  const handleSell = async () => {
-    if (!selectedCharacter || !sellPrice) {
-      alert('Please select a character and enter a price');
-      return;
-    }
 
-    const price = parseInt(sellPrice);
-    if (isNaN(price) || price <= 0) {
-      alert('Please enter a valid price');
-      return;
-    }
-
-    setSelling(true);
-    try {
-      const result = await createListing({
-        user_character_id: selectedCharacter.id,
-        price: price
-      });
-
-      if (result.success) {
-        await fetchInventory(); // Refresh inventory
-        setSelectedCharacter(null);
-        setSellPrice('');
-        setActiveTab('my-listings'); // Switch to my listings tab
-        alert(`Successfully listed ${selectedCharacter.name} (Level ${selectedCharacter.level}) for ${price} diamonds!`);
-      } else {
-        alert(result.error || 'Failed to create listing');
-      }
-    } finally {
-      setSelling(false);
-    }
-  };
 
   const handleCancelListing = async (listing) => {
     const result = await cancelListing(listing.id);
@@ -168,9 +131,7 @@ const Market = () => {
     }
   };
 
-  const getCharacterOptions = () => {
-    return inventory.filter(char => !char.is_active); // Can't sell active character
-  };
+
 
   if (error) {
     return (
@@ -201,13 +162,7 @@ const Market = () => {
           <span className="tab-icon">🛒</span>
           Browse Market
         </button>
-        <button 
-          className={`tab-button ${activeTab === 'sell' ? 'active' : ''}`}
-          onClick={() => setActiveTab('sell')}
-        >
-          <span className="tab-icon">💰</span>
-          Sell Character
-        </button>
+
         <button 
           className={`tab-button ${activeTab === 'my-listings' ? 'active' : ''}`}
           onClick={() => setActiveTab('my-listings')}
@@ -346,74 +301,7 @@ const Market = () => {
         </div>
       )}
 
-      {/* Sell Character Tab */}
-      {activeTab === 'sell' && (
-        <div className="sell-character-tab">
-          <div className="sell-form">
-            <h3>Sell Character</h3>
-            
-            <div className="form-group">
-              <label>Select Character:</label>
-              <select
-                className="modern-filter-select"
-                value={selectedCharacter?.id || ''}
-                onChange={(e) => {
-                  const char = getCharacterOptions().find(c => c.id === parseInt(e.target.value));
-                  setSelectedCharacter(char || null);
-                }}
-              >
-                <option value="">Choose a character to sell</option>
-                {getCharacterOptions().map(char => (
-                  <option key={char.id} value={char.id}>
-                    {char.name} (Level {char.level}) - {char.current_income_rate || char.income_rate} 💎/hour
-                  </option>
-                ))}
-              </select>
-            </div>
 
-            <div className="form-group">
-              <label>Price (Diamonds):</label>
-              <input
-                type="number"
-                className="modern-filter-input"
-                placeholder="Enter price in diamonds"
-                value={sellPrice}
-                onChange={(e) => setSellPrice(e.target.value)}
-                min="1"
-              />
-            </div>
-
-            {selectedCharacter && (
-              <div className="character-preview">
-                <div className={`case-container ${shopService.getRarityClass(selectedCharacter.rarity)}`}>
-                  <div className={`case-rarity ${shopService.getRarityClass(selectedCharacter.rarity)}-rarity`}>
-                    {shopService.getRarityLabel(selectedCharacter.rarity)}
-                  </div>
-                  
-                  <img 
-                    src={selectedCharacter.src || selectedCharacter.image_url} 
-                    alt={selectedCharacter.name} 
-                    className="case-image"
-                  />
-                  
-                  <div className="case-name">{selectedCharacter.name}</div>
-                  <div className="case-description">
-                    Level {selectedCharacter.level} • {selectedCharacter.current_income_rate || selectedCharacter.income_rate} 💎/hour
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <button
-              className="sell-button"
-              onClick={handleSell}
-              disabled={selling || !selectedCharacter || !sellPrice}
-            >
-              {selling ? 'Creating Listing...' : 'Create Listing'}
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* My Listings Tab */}
       {activeTab === 'my-listings' && (
@@ -429,9 +317,7 @@ const Market = () => {
             ) : myListings.length === 0 ? (
               <div className="empty-listings">
                 <p>You don't have any active listings</p>
-                <button onClick={() => setActiveTab('sell')}>
-                  Sell a Character
-                </button>
+                <p>Go to Inventory to sell your characters!</p>
               </div>
             ) : (
               myListings.map(listing => (

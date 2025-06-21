@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../context/GameContext';
 import { useShop } from '../api/hooks/useShop.ts';
+import { useMarket } from '../api/hooks/useMarket.ts';
 import shopService from '../api/services/shopService.ts';
 import './Inventory.css';
 
@@ -19,10 +20,18 @@ export default function Shop() {
     clearError
   } = useShop();
   
+  const { createListing } = useMarket();
+  
   const [isAnimationActive, setIsAnimationActive] = useState(false);
   const [activeTab, setActiveTab] = useState('cases');
   const [upgrading, setUpgrading] = useState(false);
   const [settingActive, setSettingActive] = useState(false);
+  
+  // Sell modal state
+  const [showSellModal, setShowSellModal] = useState(false);
+  const [selectedCharacterForSale, setSelectedCharacterForSale] = useState(null);
+  const [sellPrice, setSellPrice] = useState('');
+  const [selling, setSelling] = useState(false);
 
   // Fetch data on component mount
   useEffect(() => {
@@ -88,6 +97,54 @@ export default function Shop() {
 
   const getRarityClass = (rarity) => {
     return `rarity-${rarity}`;
+  };
+
+  const handleSellClick = (character) => {
+    if (character.is_active) {
+      alert('Cannot sell active character! Set another character as active first.');
+      return;
+    }
+    setSelectedCharacterForSale(character);
+    setShowSellModal(true);
+  };
+
+  const handleSellSubmit = async () => {
+    if (!selectedCharacterForSale || !sellPrice) {
+      alert('Please enter a price');
+      return;
+    }
+
+    const price = parseInt(sellPrice);
+    if (isNaN(price) || price <= 0) {
+      alert('Please enter a valid price');
+      return;
+    }
+
+    setSelling(true);
+    try {
+      const result = await createListing({
+        user_character_id: selectedCharacterForSale.id,
+        price: price
+      });
+
+      if (result.success) {
+        await fetchInventory(); // Refresh inventory
+        setShowSellModal(false);
+        setSelectedCharacterForSale(null);
+        setSellPrice('');
+        alert(`Successfully listed ${selectedCharacterForSale.character_name || selectedCharacterForSale.name} (Level ${selectedCharacterForSale.level}) for ${price} diamonds!`);
+      } else {
+        alert(result.error || 'Failed to create listing');
+      }
+    } finally {
+      setSelling(false);
+    }
+  };
+
+  const handleSellCancel = () => {
+    setShowSellModal(false);
+    setSelectedCharacterForSale(null);
+    setSellPrice('');
   };
 
   const handleCaseClick = (caseData) => {
@@ -564,12 +621,76 @@ export default function Shop() {
                             Set Active
                           </button>
                         )}
+
+                        <button
+                          className="character-sell-btn"
+                          onClick={() => handleSellClick(character)}
+                          disabled={character.is_active}
+                        >
+                          <span className="btn-icon">💰</span>
+                          Sell
+                        </button>
                       </div>
                     </div>
                   ))
                 )}
               </div>
             </div>
+        </div>
+      )}
+
+      {/* Sell Modal */}
+      {showSellModal && (
+        <div className="case-animation-overlay visible">
+          <div className="sell-modal">
+            <h3>Sell Character</h3>
+            {selectedCharacterForSale && (
+              <div className="sell-character-info">
+                <img 
+                  src={selectedCharacterForSale.src || selectedCharacterForSale.image_url || `https://em-content.zobj.net/source/telegram/386/video-game_1f3ae.webp`}
+                  alt={selectedCharacterForSale.character_name || selectedCharacterForSale.name}
+                  className="sell-character-image"
+                />
+                <div className="sell-character-details">
+                  <h4>{selectedCharacterForSale.character_name || selectedCharacterForSale.name}</h4>
+                  <p>Level {selectedCharacterForSale.level}</p>
+                  <p>{selectedCharacterForSale.current_income_rate} 💎/hour</p>
+                  <p className={`rarity ${getRarityClass(selectedCharacterForSale.rarity)}`}>
+                    {shopService.getRarityLabel(selectedCharacterForSale.rarity)}
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            <div className="sell-price-input">
+              <label htmlFor="sellPrice">Price (Diamonds):</label>
+              <input
+                id="sellPrice"
+                type="number"
+                value={sellPrice}
+                onChange={(e) => setSellPrice(e.target.value)}
+                placeholder="Enter price in diamonds"
+                min="1"
+              />
+            </div>
+            
+            <div className="sell-modal-actions">
+              <button 
+                className="sell-confirm-btn"
+                onClick={handleSellSubmit}
+                disabled={selling || !sellPrice}
+              >
+                {selling ? 'Listing...' : 'List for Sale'}
+              </button>
+              <button 
+                className="sell-cancel-btn"
+                onClick={handleSellCancel}
+                disabled={selling}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
