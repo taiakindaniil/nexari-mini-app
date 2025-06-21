@@ -136,17 +136,19 @@ export default function Shop() {
     overlay.appendChild(cancelButton);
     document.body.appendChild(overlay);
 
+    let realRouletteItems = [];
+    
     try {
       // Get real case details and generate roulette with actual possible rewards
       const caseDetails = await shopService.getCaseDetails(caseData.id);
-      const previewItems = generateRealRouletteItems(caseDetails);
-      renderRouletteItems(rouletteStrip, previewItems);
+      realRouletteItems = generateRealRouletteItems(caseDetails);
+      renderRouletteItems(rouletteStrip, realRouletteItems);
       rouletteStrip.style.opacity = "1";
     } catch (error) {
       console.error('Error loading case details:', error);
       // Fallback to dummy items if case details fail
-      const previewItems = generatePreviewRouletteItems();
-      renderRouletteItems(rouletteStrip, previewItems);
+      realRouletteItems = generatePreviewRouletteItems();
+      renderRouletteItems(rouletteStrip, realRouletteItems);
       rouletteStrip.style.opacity = "1";
     }
 
@@ -195,12 +197,20 @@ export default function Shop() {
         
         const reward = result.reward;
         
-        // Generate roulette items with the actual reward (using the same preview items but with real winner)
-        const rouletteItems = shopService.generateRouletteItems(reward);
+        // Create a copy of real items and set the winner at position 19
+        const finalRouletteItems = [...realRouletteItems];
+        finalRouletteItems[19] = {
+          type: reward.type,
+          name: reward.name,
+          src: reward.src,
+          background: reward.background,
+          value: reward.value,
+          is_mutated: reward.is_mutated || false
+        };
         
-        // Re-render roulette with actual items and start animation
+        // Re-render roulette with the real winner in position 19
         rouletteStrip.innerHTML = "";
-        renderRouletteItems(rouletteStrip, rouletteItems);
+        renderRouletteItems(rouletteStrip, finalRouletteItems);
         
         rouletteStrip.style.animation = "roulette-spin 5s cubic-bezier(0.1, 0.7, 0.3, 1) forwards";
 
@@ -212,22 +222,6 @@ export default function Shop() {
           const winnerItem = rouletteStrip.children[winnerIndex];
           
           if (winnerItem) {
-            const img = winnerItem.querySelector("img");
-            if (img) {
-              img.src = reward.src;
-              img.alt = reward.name;
-              img.className = "animation-character";
-              if (reward.is_mutated && reward.name !== "Diamonds") {
-                img.className += " mutated";
-              }
-            }
-            
-            const bgDiv = winnerItem.querySelector(".animation-background");
-            if (bgDiv) {
-              bgDiv.style.background = reward.background;
-            }
-            
-            winnerItem.style.background = reward.background;
             winnerItem.classList.add("winner");
             
             let rewardText = reward.name;
@@ -315,16 +309,16 @@ export default function Shop() {
     });
 
     // If no items found, fallback to basic items
-    if (realItems.length === 0) {
-      realItems.push({
-        type: 'diamonds',
-        name: 'Diamonds',
-        src: 'https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp',
-        background: backgrounds[5],
-        value: 100,
-        is_mutated: false
-      });
-    }
+    // if (realItems.length === 0) {
+    //   realItems.push({
+    //     type: 'diamonds',
+    //     name: 'Diamonds',
+    //     src: 'https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp',
+    //     background: backgrounds[5],
+    //     value: 100,
+    //     is_mutated: false
+    //   });
+    // }
 
     // Generate 40 items for roulette, randomly selecting from real items
     const rouletteItems = [];

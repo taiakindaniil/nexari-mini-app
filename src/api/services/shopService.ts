@@ -188,52 +188,52 @@ class ShopService {
   /**
    * Generate roulette items for animation
    */
-  generateRouletteItems(reward: CaseReward): Array<CaseReward & { value?: number }> {
-    const backgrounds = [
-      'linear-gradient(135deg, #ffafbd, #ffc3a0)',
-      'linear-gradient(135deg, #89f7fe, #66a6ff)',
-      'linear-gradient(135deg, #f6d365, #fda085)',
-      'linear-gradient(135deg, #84fab0, #8fd3f4)',
-      '#ffcc70',
-      'linear-gradient(135deg, #d299c2, #fef9d7)',
-      '#000000',
-      'linear-gradient(135deg, #667eea, #764ba2)',
-      'linear-gradient(135deg, #ffecd2, #fcb69f)',
-      '#d3f8e2'
-    ];
+//   generateRouletteItems(reward: CaseReward): Array<CaseReward & { value?: number }> {
+//     const backgrounds = [
+//       'linear-gradient(135deg, #ffafbd, #ffc3a0)',
+//       'linear-gradient(135deg, #89f7fe, #66a6ff)',
+//       'linear-gradient(135deg, #f6d365, #fda085)',
+//       'linear-gradient(135deg, #84fab0, #8fd3f4)',
+//       '#ffcc70',
+//       'linear-gradient(135deg, #d299c2, #fef9d7)',
+//       '#000000',
+//       'linear-gradient(135deg, #667eea, #764ba2)',
+//       'linear-gradient(135deg, #ffecd2, #fcb69f)',
+//       '#d3f8e2'
+//     ];
 
-    const dummyItems = [
-      { src: "https://em-content.zobj.net/source/telegram/386/monkey-face_1f435.webp", name: "Monkey" },
-      { src: "https://em-content.zobj.net/source/telegram/386/gorilla_1f98d.webp", name: "Gorilla" },
-      { src: "https://em-content.zobj.net/source/telegram/386/dog-face_1f436.webp", name: "Dog" },
-      { src: "https://em-content.zobj.net/source/telegram/386/cat-face_1f431.webp", name: "Cat" },
-      { src: "https://em-content.zobj.net/source/telegram/386/lion_1f981.webp", name: "Lion" },
-      { src: "https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp", name: "Diamonds" }
-    ];
+//     const dummyItems = [
+//       { src: "https://em-content.zobj.net/source/telegram/386/monkey-face_1f435.webp", name: "Monkey" },
+//       { src: "https://em-content.zobj.net/source/telegram/386/gorilla_1f98d.webp", name: "Gorilla" },
+//       { src: "https://em-content.zobj.net/source/telegram/386/dog-face_1f436.webp", name: "Dog" },
+//       { src: "https://em-content.zobj.net/source/telegram/386/cat-face_1f431.webp", name: "Cat" },
+//       { src: "https://em-content.zobj.net/source/telegram/386/lion_1f981.webp", name: "Lion" },
+//       { src: "https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp", name: "Diamonds" }
+//     ];
 
-    const rouletteItems: Array<CaseReward & { value?: number }> = [];
+//     const rouletteItems: Array<CaseReward & { value?: number }> = [];
     
-    for (let i = 0; i < 40; i++) {
-      if (i === 19) {
-        // Winner position
-        rouletteItems.push(reward);
-        continue;
-      }
+//     for (let i = 0; i < 40; i++) {
+//       if (i === 19) {
+//         // Winner position
+//         rouletteItems.push(reward);
+//         continue;
+//       }
 
-      // Random dummy item
-      const randomItem = dummyItems[Math.floor(Math.random() * dummyItems.length)];
-      rouletteItems.push({
-        type: randomItem.name === "Diamonds" ? "diamonds" : "character",
-        name: randomItem.name,
-        src: randomItem.src,
-        is_mutated: randomItem.name !== "Diamonds" && Math.random() < 0.1,
-        background: backgrounds[Math.floor(Math.random() * backgrounds.length)],
-        value: randomItem.name === "Diamonds" ? Math.floor(Math.random() * 250) + 1 : undefined,
-      });
-    }
+//       // Random dummy item
+//       const randomItem = dummyItems[Math.floor(Math.random() * dummyItems.length)];
+//       rouletteItems.push({
+//         type: randomItem.name === "Diamonds" ? "diamonds" : "character",
+//         name: randomItem.name,
+//         src: randomItem.src,
+//         is_mutated: randomItem.name !== "Diamonds" && Math.random() < 0.1,
+//         background: backgrounds[Math.floor(Math.random() * backgrounds.length)],
+//         value: randomItem.name === "Diamonds" ? Math.floor(Math.random() * 250) + 1 : undefined,
+//       });
+//     }
 
-    return rouletteItems;
-  }
+//     return rouletteItems;
+//   }
 
   /**
    * Get rarity CSS class
