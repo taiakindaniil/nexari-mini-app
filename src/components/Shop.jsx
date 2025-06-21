@@ -86,8 +86,7 @@ export default function Shop() {
     }
   };
 
-  const getRarityClass = (incomeRate) => {
-    const rarity = shopService.getCharacterRarity(incomeRate);
+  const getRarityClass = (rarity) => {
     return `rarity-${rarity}`;
   };
 
@@ -527,10 +526,10 @@ export default function Shop() {
                     .map((character) => (
                     <div
                       key={character.id}
-                      className={`case-container ${getRarityClass(character.income_rate)} ${character.is_active ? 'active-character' : ''}`}
+                      className={`case-container ${getRarityClass(character.rarity)} ${character.is_active ? 'active-character' : ''}`}
                     >
-                      <div className={`case-rarity ${getRarityClass(character.income_rate)}-rarity`}>
-                        {shopService.getCharacterRarity(character.income_rate)}
+                      <div className={`case-rarity ${getRarityClass(character.rarity)}-rarity`}>
+                        {shopService.getRarityLabel(character.rarity)}
                       </div>
                       
                       <img 
@@ -542,17 +541,17 @@ export default function Shop() {
                       <div className="case-name">{character.character_name || character.name}</div>
                       
                       <div className="case-description">
-                        Level {character.level} • {character.income_rate} 💎/hour
+                        Level {character.level} • {character.current_income_rate} 💎/hour
                       </div>
                       
                       <div className="character-actions">
                         <button
                           className="character-upgrade-btn"
                           onClick={() => handleUpgradeCharacterDirect(character)}
-                          disabled={upgrading || getUserDiamonds() < shopService.calculateUpgradeCost(character.level)}
+                          disabled={upgrading || getUserDiamonds() < character.upgrade_cost}
                         >
                           <span className="btn-icon">⬆️</span>
-                          Upgrade {shopService.calculateUpgradeCost(character.level)} 💎
+                          Upgrade {character.upgrade_cost} 💎
                         </button>
 
                         {!character.is_active && (

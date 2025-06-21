@@ -17,7 +17,7 @@ export interface InventoryItem {
   character_id: number;
   name: string;
   level: number;
-  income_rate: number;
+  current_income_rate: number;
   src: string;
   is_active: boolean;
   is_mutated: boolean;
@@ -283,38 +283,6 @@ class ShopService {
       return `${caseData.price_ton} TON`;
     }
     return 'Free';
-  }
-
-  /**
-   * Calculate upgrade cost for character
-   */
-  calculateUpgradeCost(level: number): number {
-    const baseCost = 500;
-    return baseCost * Math.pow(2, level - 1);
-  }
-
-  /**
-   * Get character rarity based on income rate
-   */
-  getCharacterRarity(incomeRate: number): string {
-    if (incomeRate >= 1000) return 'legendary';
-    if (incomeRate >= 500) return 'epic';
-    if (incomeRate >= 200) return 'rare';
-    return 'common';
-  }
-
-  /**
-   * Get character rarity color
-   */
-  getCharacterRarityColor(incomeRate: number): string {
-    const rarity = this.getCharacterRarity(incomeRate);
-    const colors = {
-      'common': '#95a5a6',
-      'rare': '#3498db',
-      'epic': '#9b59b6',
-      'legendary': '#f39c12'
-    };
-    return colors[rarity] || colors.common;
   }
 }
 
