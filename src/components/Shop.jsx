@@ -516,7 +516,15 @@ export default function Shop() {
                     <p>Open cases in the shop to get characters!</p>
                   </div>
                 ) : (
-                  inventory.filter(item => item.character_name || item.name).map((character) => (
+                  inventory
+                    .filter(item => item.character_name || item.name)
+                    .sort((a, b) => {
+                      // Sort by is_active first (active characters first), then by id
+                      if (a.is_active && !b.is_active) return -1;
+                      if (!a.is_active && b.is_active) return 1;
+                      return a.id - b.id;
+                    })
+                    .map((character) => (
                     <div
                       key={character.id}
                       className={`case-container ${getRarityClass(character.income_rate)} ${character.is_active ? 'active-character' : ''}`}
