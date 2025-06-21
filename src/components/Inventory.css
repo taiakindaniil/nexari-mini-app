@@ -1029,6 +1029,8 @@
   font-size: 0.8rem;
   opacity: 0.8;
   margin: 4px 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .empty-market,
@@ -1428,5 +1430,10 @@
   .sell-confirm-btn,
   .sell-cancel-btn {
     max-width: none;
+  }
+
+  .seller-info {
+    font-size: 0.7rem;
+    margin: 2px 0;
   }
 } 

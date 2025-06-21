@@ -4,68 +4,12 @@ import { useShop } from '../api/hooks/useShop.ts';
 import { useMarket } from '../api/hooks/useMarket.ts';
 import shopService from '../api/services/shopService.ts';
 
-const CHARACTERS = [
-  { src: "https://em-content.zobj.net/source/telegram/386/video-game_1f3ae.webp", name: "Controller" },
-  { src: "https://em-content.zobj.net/source/telegram/386/monkey-face_1f435.webp", name: "Monkey" },
-  { src: "https://em-content.zobj.net/source/telegram/386/gorilla_1f98d.webp", name: "Gorilla" },
-  { src: "https://em-content.zobj.net/source/telegram/386/dog-face_1f436.webp", name: "Dog" },
-  { src: "https://em-content.zobj.net/source/telegram/386/cat-face_1f431.webp", name: "Cat" },
-  { src: "https://em-content.zobj.net/source/telegram/386/lion_1f981.webp", name: "Lion" },
-  { src: "https://em-content.zobj.net/source/telegram/386/tiger-face_1f42f.webp", name: "Tiger" },
-  { src: "https://em-content.zobj.net/source/telegram/386/hamster_1f439.webp", name: "Hamster" },
-  { src: "https://em-content.zobj.net/source/telegram/386/panda_1f43c.webp", name: "Panda" },
-  { src: "https://em-content.zobj.net/source/telegram/386/chicken_1f414.webp", name: "Chicken" },
-  { src: "https://em-content.zobj.net/source/telegram/386/baby-chick_1f424.webp", name: "Baby Chick" },
-];
-
-const BACKGROUND_GRADIENTS = [
-  'linear-gradient(135deg, #ffafbd, #ffc3a0)',
-  'linear-gradient(135deg, #89f7fe, #66a6ff)',
-  'linear-gradient(135deg, #f6d365, #fda085)',
-  'linear-gradient(135deg, #84fab0, #8fd3f4)',
-  '#ffcc70',
-  'linear-gradient(135deg, #d299c2, #fef9d7)',
-  '#000000',
-  'linear-gradient(135deg, #667eea, #764ba2)',
-  'linear-gradient(135deg, #ffecd2, #fcb69f)',
-  '#d3f8e2',
-  '#f6e7d7',
-  '#b2fefa',
-  'linear-gradient(135deg, #e0c3fc, #8ec5fc)',
-  '#d1c4e9',
-  '#f48fb1',
-  '#ffe082',
-  '#bcaaa4',
-  '#ffab91',
-  '#ce93d8',
-  '#90caf9',
-  '#a5d6a7',
-  '#b0bec5',
-  '#b39ddb',
-  '#ef9a9a',
-  '#a1887f'
-];
-
-const INITIAL_MARKET_SKINS = [
-  { id: "skin1", character: CHARACTERS[1], background: BACKGROUND_GRADIENTS[0], price: 500, timestamp: Date.now() - 10000 },
-  { id: "skin2", character: CHARACTERS[2], background: BACKGROUND_GRADIENTS[1], price: 750, timestamp: Date.now() - 9000 },
-  { id: "skin3", character: CHARACTERS[3], background: BACKGROUND_GRADIENTS[2], price: 300, timestamp: Date.now() - 8000 },
-  { id: "skin4", character: CHARACTERS[4], background: BACKGROUND_GRADIENTS[3], price: 1000, timestamp: Date.now() - 7000 },
-  { id: "skin5", character: CHARACTERS[5], background: BACKGROUND_GRADIENTS[4], price: 600, timestamp: Date.now() - 6000 },
-  { id: "skin6", character: CHARACTERS[6], background: BACKGROUND_GRADIENTS[5], price: 450, timestamp: Date.now() - 5000 },
-  { id: "skin7", character: CHARACTERS[7], background: BACKGROUND_GRADIENTS[6], price: 800, timestamp: Date.now() - 4000 },
-  { id: "skin8", character: CHARACTERS[8], background: BACKGROUND_GRADIENTS[7], price: 550, timestamp: Date.now() - 3000 },
-  { id: "skin9", character: CHARACTERS[9], background: BACKGROUND_GRADIENTS[8], price: 700, timestamp: Date.now() - 2000 },
-  { id: "skin10", character: CHARACTERS[10], background: BACKGROUND_GRADIENTS[9], price: 400, timestamp: Date.now() - 1000 },
-];
-
 const Market = () => {
   const { gameStatus, fetchGameStatus } = useGame();
   const { fetchInventory } = useShop();
   const {
     listings,
     myListings,
-    stats,
     loading,
     error,
     fetchListings,
@@ -287,7 +231,7 @@ const Market = () => {
                     onClick={() => handlePurchase(listing)}
                     disabled={loading || getUserDiamonds() < listing.price}
                   >
-                    <span>Buy for {listing.price}</span>
+                    <span>{listing.price}</span>
                     <img 
                       src="https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp" 
                       alt="Diamonds" 
