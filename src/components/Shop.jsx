@@ -1,10 +1,88 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useGame } from '../context/GameContext';
 import { useShop } from '../api/hooks/useShop.ts';
 import { useMarket } from '../api/hooks/useMarket.ts';
 import shopService from '../api/services/shopService.ts';
 import './Inventory.css';
+
+// Separate Modal Component
+const SellModal = React.memo(({ 
+  isOpen, 
+  character, 
+  price, 
+  onPriceChange, 
+  onConfirm, 
+  onCancel, 
+  selling 
+}) => {
+  if (!isOpen) return null;
+
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onCancel();
+    }
+  };
+
+  const getRarityClass = (rarity) => {
+    return `rarity-${rarity}`;
+  };
+
+  return createPortal(
+    <div className="sell-modal-overlay visible" onClick={handleOverlayClick}>
+      <div className="sell-modal">
+        <h3>Sell Character</h3>
+        {character && (
+          <div className="sell-character-info">
+            <img 
+              src={character.src || character.image_url || `https://em-content.zobj.net/source/telegram/386/video-game_1f3ae.webp`}
+              alt={character.character_name || character.name}
+              className="sell-character-image"
+            />
+            <div className="sell-character-details">
+              <h4>{character.character_name || character.name}</h4>
+              <p>Level {character.level}</p>
+              <p>{character.current_income_rate} 💎/hour</p>
+              <p className={`rarity ${getRarityClass(character.rarity)}`}>
+                {shopService.getRarityLabel(character.rarity)}
+              </p>
+            </div>
+          </div>
+        )}
+        
+        <div className="sell-price-input">
+          <label htmlFor="sellPrice">Price (Diamonds):</label>
+          <input
+            id="sellPrice"
+            type="number"
+            value={price}
+            onChange={(e) => onPriceChange(e.target.value)}
+            placeholder="Enter price in diamonds"
+            min="1"
+          />
+        </div>
+        
+        <div className="sell-modal-actions">
+          <button 
+            className="sell-confirm-btn"
+            onClick={onConfirm}
+            disabled={selling || !price}
+          >
+            {selling ? 'Listing...' : 'List for Sale'}
+          </button>
+          <button 
+            className="sell-cancel-btn"
+            onClick={onCancel}
+            disabled={selling}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+});
 
 export default function Shop() {
   const { gameStatus, fetchGameStatus } = useGame();
@@ -100,16 +178,16 @@ export default function Shop() {
     return `rarity-${rarity}`;
   };
 
-  const handleSellClick = (character) => {
+  const handleSellClick = useCallback((character) => {
     if (character.is_active) {
       alert('Cannot sell active character! Set another character as active first.');
       return;
     }
     setSelectedCharacterForSale(character);
     setShowSellModal(true);
-  };
+  }, []);
 
-  const handleSellSubmit = async () => {
+  const handleSellSubmit = useCallback(async () => {
     if (!selectedCharacterForSale || !sellPrice) {
       alert('Please enter a price');
       return;
@@ -140,79 +218,17 @@ export default function Shop() {
     } finally {
       setSelling(false);
     }
-  };
+  }, [selectedCharacterForSale, sellPrice, createListing, fetchInventory]);
 
-  const handleSellCancel = () => {
+  const handleSellCancel = useCallback(() => {
     setShowSellModal(false);
     setSelectedCharacterForSale(null);
     setSellPrice('');
-  };
+  }, []);
 
-  // Sell Modal Component
-  const SellModal = () => {
-    if (!showSellModal) return null;
-
-    const handleOverlayClick = (e) => {
-      if (e.target === e.currentTarget) {
-        handleSellCancel();
-      }
-    };
-
-    return createPortal(
-      <div className="sell-modal-overlay visible" onClick={handleOverlayClick}>
-        <div className="sell-modal">
-          <h3>Sell Character</h3>
-          {selectedCharacterForSale && (
-            <div className="sell-character-info">
-              <img 
-                src={selectedCharacterForSale.src || selectedCharacterForSale.image_url || `https://em-content.zobj.net/source/telegram/386/video-game_1f3ae.webp`}
-                alt={selectedCharacterForSale.character_name || selectedCharacterForSale.name}
-                className="sell-character-image"
-              />
-              <div className="sell-character-details">
-                <h4>{selectedCharacterForSale.character_name || selectedCharacterForSale.name}</h4>
-                <p>Level {selectedCharacterForSale.level}</p>
-                <p>{selectedCharacterForSale.current_income_rate} 💎/hour</p>
-                <p className={`rarity ${getRarityClass(selectedCharacterForSale.rarity)}`}>
-                  {shopService.getRarityLabel(selectedCharacterForSale.rarity)}
-                </p>
-              </div>
-            </div>
-          )}
-          
-          <div className="sell-price-input">
-            <label htmlFor="sellPrice">Price (Diamonds):</label>
-            <input
-              id="sellPrice"
-              type="number"
-              value={sellPrice}
-              onChange={(e) => setSellPrice(e.target.value)}
-              placeholder="Enter price in diamonds"
-              min="1"
-            />
-          </div>
-          
-          <div className="sell-modal-actions">
-            <button 
-              className="sell-confirm-btn"
-              onClick={handleSellSubmit}
-              disabled={selling || !sellPrice}
-            >
-              {selling ? 'Listing...' : 'List for Sale'}
-            </button>
-            <button 
-              className="sell-cancel-btn"
-              onClick={handleSellCancel}
-              disabled={selling}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>,
-      document.body
-    );
-  };
+  const handlePriceChange = useCallback((value) => {
+    setSellPrice(value);
+  }, []);
 
   const handleCaseClick = (caseData) => {
     if (isAnimationActive) return;
@@ -707,7 +723,15 @@ export default function Shop() {
       )}
 
       {/* Render Sell Modal using Portal */}
-      <SellModal />
+      <SellModal 
+        isOpen={showSellModal}
+        character={selectedCharacterForSale}
+        price={sellPrice}
+        onPriceChange={handlePriceChange}
+        onConfirm={handleSellSubmit}
+        onCancel={handleSellCancel}
+        selling={selling}
+      />
     </div>
   );
 } 
