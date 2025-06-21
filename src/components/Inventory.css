@@ -976,4 +976,216 @@
     padding: 6px 8px;
     font-size: 0.7rem;
   }
+}
+
+/* Market Styles */
+.market-stats {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 15px;
+  border-radius: 20px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.stat-icon {
+  font-size: 1.2rem;
+}
+
+.modern-filter-input {
+  padding: 10px 15px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  width: 120px;
+}
+
+.modern-filter-input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.modern-filter-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.seller-info {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  margin: 4px 0;
+}
+
+.empty-market,
+.empty-listings {
+  text-align: center;
+  padding: 40px 20px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.empty-market p,
+.empty-listings p {
+  margin: 8px 0;
+  font-size: 1rem;
+}
+
+.empty-listings button {
+  padding: 12px 24px;
+  background: rgba(40, 167, 69, 0.9);
+  color: white;
+  border: none;
+  border-radius: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 15px;
+}
+
+.empty-listings button:hover {
+  background: rgba(40, 167, 69, 1);
+  transform: translateY(-2px);
+}
+
+.sell-character-tab {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.sell-form {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 30px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.sell-form h3 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #fff;
+  font-size: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.character-preview {
+  margin: 20px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.character-preview .case-container {
+  max-width: 250px;
+}
+
+.sell-button {
+  width: 100%;
+  padding: 15px;
+  background: rgba(40, 167, 69, 0.9);
+  color: white;
+  border: none;
+  border-radius: 15px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 20px;
+}
+
+.sell-button:hover:not(:disabled) {
+  background: rgba(40, 167, 69, 1);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+}
+
+.sell-button:disabled {
+  background: rgba(108, 117, 125, 0.6);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.my-listings-tab h3 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #fff;
+  font-size: 1.5rem;
+}
+
+.listing-price {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f39c12;
+  margin: 8px 0;
+}
+
+.cancel-listing-button {
+  padding: 10px 15px;
+  background: rgba(220, 53, 69, 0.9);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.cancel-listing-button:hover:not(:disabled) {
+  background: rgba(220, 53, 69, 1);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(220, 53, 69, 0.3);
+}
+
+.cancel-listing-button:disabled {
+  background: rgba(108, 117, 125, 0.6);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+@media (max-width: 768px) {
+  .market-stats {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .sell-character-tab {
+    padding: 10px;
+  }
+  
+  .sell-form {
+    padding: 20px;
+  }
+  
+  .modern-filter-input {
+    width: 100px;
+  }
 } 

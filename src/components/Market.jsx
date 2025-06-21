@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGame } from '../context/GameContext';
+import { useShop } from '../api/hooks/useShop.ts';
+import { useMarket } from '../api/hooks/useMarket.ts';
+import shopService from '../api/services/shopService.ts';
 
 const CHARACTERS = [
   { src: "https://em-content.zobj.net/source/telegram/386/video-game_1f3ae.webp", name: "Controller" },
@@ -57,129 +60,416 @@ const INITIAL_MARKET_SKINS = [
 ];
 
 const Market = () => {
-  const { coins, spendCoins, addToInventory } = useGame();
-  const [availableMarketSkins, setAvailableMarketSkins] = useState(INITIAL_MARKET_SKINS);
+  const { gameStatus, fetchGameStatus } = useGame();
+  const { inventory, fetchInventory } = useShop();
+  const {
+    listings,
+    myListings,
+    stats,
+    loading,
+    error,
+    fetchListings,
+    createListing,
+    purchase,
+    cancelListing,
+    fetchMyListings,
+    fetchStats,
+    clearError
+  } = useMarket();
+
+  const [activeTab, setActiveTab] = useState('browse'); // browse, my-listings, sell
   const [characterFilter, setCharacterFilter] = useState('');
-  const [backgroundFilter, setBackgroundFilter] = useState('');
-  const [priceSort, setPriceSort] = useState('newest');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+  
+  // Sell form state
+  const [selectedCharacter, setSelectedCharacter] = useState(null);
+  const [sellPrice, setSellPrice] = useState('');
+  const [selling, setSelling] = useState(false);
 
-  const getFilteredAndSortedSkins = () => {
-    let filteredSkins = [...availableMarketSkins];
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchListings();
+    fetchMyListings();
+    fetchStats();
+    fetchInventory();
+  }, []);
 
-    // Apply character filter
-    if (characterFilter) {
-      filteredSkins = filteredSkins.filter(skin => skin.character.name === characterFilter);
-    }
+  // Apply filters when they change
+  useEffect(() => {
+    const minPriceNum = minPrice ? parseInt(minPrice) : undefined;
+    const maxPriceNum = maxPrice ? parseInt(maxPrice) : undefined;
+    fetchListings(characterFilter || undefined, minPriceNum, maxPriceNum, sortBy);
+  }, [characterFilter, minPrice, maxPrice, sortBy]);
 
-    // Apply background filter
-    if (backgroundFilter) {
-      filteredSkins = filteredSkins.filter(skin => skin.background === backgroundFilter);
-    }
-
-    // Apply sorting
-    if (priceSort === 'price-desc') {
-      filteredSkins.sort((a, b) => b.price - a.price);
-    } else if (priceSort === 'price-asc') {
-      filteredSkins.sort((a, b) => a.price - b.price);
-    } else {
-      filteredSkins.sort((a, b) => b.timestamp - a.timestamp);
-    }
-
-    return filteredSkins;
+  const getUserDiamonds = () => {
+    return gameStatus?.diamonds_balance || 0;
   };
 
-  const handleBuy = (skin) => {
-    if (coins >= skin.price) {
-      spendCoins(skin.price);
-      addToInventory({
-        id: Date.now(),
-        src: skin.character.src,
-        name: skin.character.name,
-        background: skin.background,
-        level: 1,
-        incomeRate: 100
+  const handlePurchase = async (listing) => {
+    if (getUserDiamonds() < listing.price) {
+      alert(`Not enough diamonds! You need ${listing.price} diamonds but have ${getUserDiamonds()}.`);
+      return;
+    }
+
+    const result = await purchase({ listing_id: listing.id });
+    
+    if (result.success) {
+      await fetchGameStatus(); // Refresh balance
+      await fetchInventory(); // Refresh inventory
+      alert(`Successfully purchased ${listing.character.name} (Level ${listing.character.level}) for ${listing.price} diamonds!`);
+    } else {
+      alert(result.error || 'Failed to purchase');
+    }
+  };
+
+  const handleSell = async () => {
+    if (!selectedCharacter || !sellPrice) {
+      alert('Please select a character and enter a price');
+      return;
+    }
+
+    const price = parseInt(sellPrice);
+    if (isNaN(price) || price <= 0) {
+      alert('Please enter a valid price');
+      return;
+    }
+
+    setSelling(true);
+    try {
+      const result = await createListing({
+        user_character_id: selectedCharacter.id,
+        price: price
       });
-      
-      // Remove from market
-      setAvailableMarketSkins(prev => prev.filter(s => s.id !== skin.id));
-    } else {
-      alert("Not enough diamonds!");
+
+      if (result.success) {
+        await fetchInventory(); // Refresh inventory
+        setSelectedCharacter(null);
+        setSellPrice('');
+        setActiveTab('my-listings'); // Switch to my listings tab
+        alert(`Successfully listed ${selectedCharacter.name} (Level ${selectedCharacter.level}) for ${price} diamonds!`);
+      } else {
+        alert(result.error || 'Failed to create listing');
+      }
+    } finally {
+      setSelling(false);
     }
   };
 
-  const filteredSkins = getFilteredAndSortedSkins();
+  const handleCancelListing = async (listing) => {
+    const result = await cancelListing(listing.id);
+    
+    if (result.success) {
+      await fetchInventory(); // Refresh inventory
+      alert(`Listing for ${listing.character.name} has been cancelled`);
+    } else {
+      alert(result.error || 'Failed to cancel listing');
+    }
+  };
+
+  const getCharacterOptions = () => {
+    return inventory.filter(char => !char.is_active); // Can't sell active character
+  };
+
+  if (error) {
+    return (
+      <div className="market-container visible">
+        <div className="error-container">
+          <div className="error-message">{error}</div>
+          <button onClick={() => {
+            clearError();
+            fetchListings();
+            fetchMyListings();
+            fetchStats();
+          }}>
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="market-container visible">      
-      {/* Modern Filters */}
-      <div className="market-filters">
-        <div className="filter-group">
-          <div className="filter-icon">🎭</div>
-          <select 
-            className="modern-filter-select" 
-            value={characterFilter}
-            onChange={(e) => setCharacterFilter(e.target.value)}
-          >
-            <option value="">All Characters</option>
-            {CHARACTERS.map(char => (
-              <option key={char.name} value={char.name}>{char.name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <div className="filter-icon">🎨</div>
-          <select 
-            className="modern-filter-select"
-            value={backgroundFilter}
-            onChange={(e) => setBackgroundFilter(e.target.value)}
-          >
-            <option value="">All Backgrounds</option>
-            {BACKGROUND_GRADIENTS.map((bg, index) => (
-              <option key={bg} value={bg}>Style {index + 1}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <div className="filter-icon">📊</div>
-          <select 
-            className="modern-filter-select"
-            value={priceSort}
-            onChange={(e) => setPriceSort(e.target.value)}
-          >
-            <option value="newest">Newest First</option>
-            <option value="price-desc">Price: High to Low</option>
-            <option value="price-asc">Price: Low to High</option>
-          </select>
-        </div>
+    <div className="market-container visible">
+      {/* Tab Switcher */}
+      <div className="tab-switcher">
+        <button 
+          className={`tab-button ${activeTab === 'browse' ? 'active' : ''}`}
+          onClick={() => setActiveTab('browse')}
+        >
+          <span className="tab-icon">🛒</span>
+          Browse Market
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'sell' ? 'active' : ''}`}
+          onClick={() => setActiveTab('sell')}
+        >
+          <span className="tab-icon">💰</span>
+          Sell Character
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'my-listings' ? 'active' : ''}`}
+          onClick={() => setActiveTab('my-listings')}
+        >
+          <span className="tab-icon">📋</span>
+          My Listings ({myListings.length})
+        </button>
       </div>
 
-      {/* Market Items Grid */}
-      <div className="market-grid">
-        {filteredSkins.map(skin => (
-          <div 
-            key={skin.id} 
-            className="market-item"
-            style={{ background: skin.background }}
-          >
-            <img 
-              src={skin.character.src} 
-              alt={skin.character.name} 
-              className="market-item-image"
-            />
-            <div className="market-item-name">{skin.character.name}</div>
-            <button className="market-buy-button" onClick={() => handleBuy(skin)}>
-              <span>Buy for {skin.price}</span>
-              <img 
-                src="https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp" 
-                alt="Gem Stone" 
-                className="button-gem-icon"
+      {/* Market Stats */}
+      {stats && (
+        <div className="market-stats">
+          <div className="stat-item">
+            <span className="stat-icon">📊</span>
+            Active Listings: {stats.active_listings}
+          </div>
+          <div className="stat-item">
+            <span className="stat-icon">💎</span>
+            Your Diamonds: {getUserDiamonds()}
+          </div>
+          <div className="stat-item">
+            <span className="stat-icon">🤝</span>
+            Total Transactions: {stats.total_transactions}
+          </div>
+        </div>
+      )}
+
+      {/* Browse Market Tab */}
+      {activeTab === 'browse' && (
+        <div className="browse-market-tab">
+          {/* Filters */}
+          <div className="market-filters">
+            <div className="filter-group">
+              <div className="filter-icon">🎭</div>
+              <select 
+                className="modern-filter-select" 
+                value={characterFilter}
+                onChange={(e) => setCharacterFilter(e.target.value)}
+              >
+                <option value="">All Characters</option>
+                {[...new Set(listings.map(l => l.character.name))].map(name => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="filter-group">
+              <div className="filter-icon">💎</div>
+              <input
+                type="number"
+                className="modern-filter-input"
+                placeholder="Min Price"
+                value={minPrice}
+                onChange={(e) => setMinPrice(e.target.value)}
               />
+            </div>
+
+            <div className="filter-group">
+              <div className="filter-icon">💎</div>
+              <input
+                type="number"
+                className="modern-filter-input"
+                placeholder="Max Price"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+              />
+            </div>
+
+            <div className="filter-group">
+              <div className="filter-icon">📊</div>
+              <select 
+                className="modern-filter-select"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="newest">Newest First</option>
+                <option value="price_asc">Price: Low to High</option>
+                <option value="price_desc">Price: High to Low</option>
+                <option value="level_desc">Level: High to Low</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Market Items Grid */}
+          <div className="market-grid">
+            {loading ? (
+              <div className="loading-container">
+                <div className="loading-spinner"></div>
+                <div>Loading market...</div>
+              </div>
+            ) : listings.length === 0 ? (
+              <div className="empty-market">
+                <p>No items in the market</p>
+                <p>Be the first to sell something!</p>
+              </div>
+            ) : (
+              listings.map(listing => (
+                <div 
+                  key={listing.id} 
+                  className={`case-container ${shopService.getRarityClass(listing.character.rarity)}`}
+                >
+                  <div className={`case-rarity ${shopService.getRarityClass(listing.character.rarity)}-rarity`}>
+                    {shopService.getRarityLabel(listing.character.rarity)}
+                  </div>
+                  
+                  <img 
+                    src={listing.character.image_url} 
+                    alt={listing.character.name} 
+                    className="case-image"
+                  />
+                  
+                  <div className="case-name">{listing.character.name}</div>
+                  <div className="case-description">
+                    Level {listing.character.level} • {listing.character.income_rate} 💎/hour
+                  </div>
+                  <div className="seller-info">
+                    Seller: {listing.seller_name}
+                  </div>
+                  
+                  <button 
+                    className="market-buy-button" 
+                    onClick={() => handlePurchase(listing)}
+                    disabled={loading || getUserDiamonds() < listing.price}
+                  >
+                    <span>Buy for {listing.price}</span>
+                    <img 
+                      src="https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp" 
+                      alt="Diamonds" 
+                      className="button-gem-icon"
+                    />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Sell Character Tab */}
+      {activeTab === 'sell' && (
+        <div className="sell-character-tab">
+          <div className="sell-form">
+            <h3>Sell Character</h3>
+            
+            <div className="form-group">
+              <label>Select Character:</label>
+              <select
+                className="modern-filter-select"
+                value={selectedCharacter?.id || ''}
+                onChange={(e) => {
+                  const char = getCharacterOptions().find(c => c.id === parseInt(e.target.value));
+                  setSelectedCharacter(char || null);
+                }}
+              >
+                <option value="">Choose a character to sell</option>
+                {getCharacterOptions().map(char => (
+                  <option key={char.id} value={char.id}>
+                    {char.name} (Level {char.level}) - {char.current_income_rate || char.income_rate} 💎/hour
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Price (Diamonds):</label>
+              <input
+                type="number"
+                className="modern-filter-input"
+                placeholder="Enter price in diamonds"
+                value={sellPrice}
+                onChange={(e) => setSellPrice(e.target.value)}
+                min="1"
+              />
+            </div>
+
+            {selectedCharacter && (
+              <div className="character-preview">
+                <div className={`case-container ${shopService.getRarityClass(selectedCharacter.rarity)}`}>
+                  <div className={`case-rarity ${shopService.getRarityClass(selectedCharacter.rarity)}-rarity`}>
+                    {shopService.getRarityLabel(selectedCharacter.rarity)}
+                  </div>
+                  
+                  <img 
+                    src={selectedCharacter.src || selectedCharacter.image_url} 
+                    alt={selectedCharacter.name} 
+                    className="case-image"
+                  />
+                  
+                  <div className="case-name">{selectedCharacter.name}</div>
+                  <div className="case-description">
+                    Level {selectedCharacter.level} • {selectedCharacter.current_income_rate || selectedCharacter.income_rate} 💎/hour
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <button
+              className="sell-button"
+              onClick={handleSell}
+              disabled={selling || !selectedCharacter || !sellPrice}
+            >
+              {selling ? 'Creating Listing...' : 'Create Listing'}
             </button>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
+
+      {/* My Listings Tab */}
+      {activeTab === 'my-listings' && (
+        <div className="my-listings-tab">
+          <h3>My Active Listings</h3>
+          
+          <div className="market-grid">
+            {loading ? (
+              <div className="loading-container">
+                <div className="loading-spinner"></div>
+                <div>Loading your listings...</div>
+              </div>
+            ) : myListings.length === 0 ? (
+              <div className="empty-listings">
+                <p>You don't have any active listings</p>
+                <button onClick={() => setActiveTab('sell')}>
+                  Sell a Character
+                </button>
+              </div>
+            ) : (
+              myListings.map(listing => (
+                <div 
+                  key={listing.id} 
+                  className={`case-container ${shopService.getRarityClass(listing.character.rarity)}`}
+                >
+                  <div className={`case-rarity ${shopService.getRarityClass(listing.character.rarity)}-rarity`}>
+                    {shopService.getRarityLabel(listing.character.rarity)}
+                  </div>
+                  
+                  <img 
+                    src={listing.character.image_url} 
+                    alt={listing.character.name} 
+                    className="case-image"
+                  />
+                  
+                  <div className="case-name">{listing.character.name}</div>
+                  <div className="case-description">
+                    Level {listing.character.level}
+                  </div>
+                  <div className="listing-price">
+                    Price: {listing.price} 💎
+                  </div>
+                  
+                  <button 
+                    className="cancel-listing-button" 
+                    onClick={() => handleCancelListing(listing)}
+                    disabled={loading}
+                  >
+                    Cancel Listing
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
