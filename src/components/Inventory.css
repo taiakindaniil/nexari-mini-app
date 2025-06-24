@@ -1031,6 +1031,8 @@
   margin: 4px 0;
   text-align: center;
   color: rgba(255, 255, 255, 0.7);
+  position: relative;
+  z-index: 5;
 }
 
 .empty-market,
@@ -1144,6 +1146,8 @@
   font-weight: 600;
   color: #f39c12;
   margin: 8px 0;
+  position: relative;
+  z-index: 5;
 }
 
 .cancel-listing-button {
@@ -1158,6 +1162,8 @@
   transition: all 0.3s ease;
   width: 100%;
   margin-top: 10px;
+  position: relative;
+  z-index: 10;
 }
 
 .cancel-listing-button:hover:not(:disabled) {

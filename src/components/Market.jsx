@@ -46,6 +46,8 @@ const Market = () => {
   };
 
   const handlePurchase = async (listing) => {
+    console.log('Purchase button clicked for listing:', listing);
+    
     if (getUserDiamonds() < listing.price) {
       alert(`Not enough diamonds! You need ${listing.price} diamonds but have ${getUserDiamonds()}.`);
       return;
@@ -65,6 +67,8 @@ const Market = () => {
 
 
   const handleCancelListing = async (listing) => {
+    console.log('Cancel listing button clicked for listing:', listing);
+    
     const result = await cancelListing(listing.id);
     
     if (result.success) {
@@ -249,9 +253,7 @@ const Market = () => {
 
       {/* My Listings Tab */}
       {activeTab === 'my-listings' && (
-        <div className="my-listings-tab" style={{width: '100%'}}>
-          <h3>My Active Listings</h3>
-          
+        <div className="my-listings-tab" style={{width: '100%'}}>          
           <div className="market-grid">
             {loading ? (
               <div className="loading-container">

@@ -502,6 +502,7 @@ main {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
+    z-index: 5;
 }
 
 .common-rarity {
@@ -588,6 +589,8 @@ main {
     /* border-radius: 50%; */
     margin: 0.5rem 0;
     transition: transform 0.3s ease;
+    position: relative;
+    z-index: 5;
 }
 
 .case-container:hover .case-image {
@@ -608,6 +611,8 @@ main {
     color: #fff;
     text-align: center;
     margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 5;
 }
 
 .case-description {
@@ -616,6 +621,8 @@ main {
     text-align: center;
     margin-bottom: 1rem;
     line-height: 1.4;
+    position: relative;
+    z-index: 5;
 }
 
 .case-price {
@@ -1568,6 +1575,8 @@ main {
     align-items: center;
     justify-content: center;
     gap: 0.4rem;
+    position: relative;
+    z-index: 10;
 }
 
 .market-buy-button:hover {
