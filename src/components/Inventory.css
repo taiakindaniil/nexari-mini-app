@@ -1164,6 +1164,10 @@
   margin-top: 10px;
   position: relative;
   z-index: 10;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cancel-listing-button:hover:not(:disabled) {
@@ -1179,13 +1183,20 @@
   box-shadow: none;
 }
 
+.cancel-listing-button:disabled:not(:hover) {
+  background: rgba(220, 53, 69, 0.7);
+}
+
 .cancel-listing-button .loading-spinner {
+  width: 16px;
+  height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
   border-top: 2px solid #fff;
   animation: spin 1s linear infinite;
   display: inline-block;
   vertical-align: middle;
+  flex-shrink: 0;
 }
 
 @keyframes spin {
@@ -1211,7 +1222,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2;
+  z-index: 5;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 

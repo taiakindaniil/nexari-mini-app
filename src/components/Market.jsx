@@ -306,11 +306,11 @@ const Market = () => {
                   >
                     {cancellingListings.has(listing.id) ? (
                       <>
-                        <div className="loading-spinner" style={{ width: '16px', height: '16px', marginRight: '8px' }}></div>
-                        Cancelling...
+                        <div className="loading-spinner"></div>
+                        <span style={{ marginLeft: '8px', whiteSpace: 'nowrap' }}>Cancelling...</span>
                       </>
                     ) : (
-                      'Cancel Listing'
+                      <span style={{ whiteSpace: 'nowrap' }}>Cancel Listing</span>
                     )}
                   </button>
                 </div>
