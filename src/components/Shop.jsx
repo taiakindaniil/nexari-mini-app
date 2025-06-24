@@ -144,7 +144,7 @@ export default function Shop() {
   const handleUpgradeCharacterDirect = async (character) => {
     if (upgrading) return;
     
-    const upgradeCost = shopService.calculateUpgradeCost(character.level);
+    const upgradeCost = character.upgrade_cost;
     const currentDiamonds = getUserDiamonds();
     
     if (currentDiamonds < upgradeCost) {
