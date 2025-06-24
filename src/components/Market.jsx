@@ -32,6 +32,7 @@ const Market = () => {
   const [sortBy, setSortBy] = useState('newest');
   const [cancellingListings, setCancellingListings] = useState(new Set());
   const [purchasingListing, setPurchasingListing] = useState(null);
+  const [hiddenListings, setHiddenListings] = useState(new Set());
 
   // Check if wallet is connected
   const isWalletConnected = !!wallet?.account?.address;
@@ -89,6 +90,9 @@ const Market = () => {
           });
           
           alert(`Transaction sent successfully!`);
+          
+          // Hide the listing locally without refreshing all listings
+          setHiddenListings(prev => new Set([...prev, listing.id]));
           
         } catch (tonError) {
           console.error('TON transaction error:', tonError);
@@ -244,7 +248,7 @@ const Market = () => {
                 <p>Be the first to sell something!</p>
               </div>
             ) : (
-              listings.map(listing => (
+              listings.filter(listing => !hiddenListings.has(listing.id)).map(listing => (
                 <div 
                   key={listing.id} 
                   className={`case-container ${shopService.getRarityClass(listing.character.rarity)}`}
