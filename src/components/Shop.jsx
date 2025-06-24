@@ -453,7 +453,7 @@ export default function Shop() {
           type: 'character',
           name: randomReward.character_name || 'Unknown Character',
           src: randomReward.image_url || 'https://em-content.zobj.net/source/telegram/386/video-game_1f3ae.webp',
-          background: shopService.getRarityColor(randomReward.character?.rarity),
+          background: shopService.getRarityColor(randomReward.rarity),
           value: null
         };
       }
