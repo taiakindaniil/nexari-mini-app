@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useGame } from '../context/GameContext';
 import { useShop } from '../api/hooks/useShop.ts';
 import { useMarket } from '../api/hooks/useMarket.ts';
+import { useTonConnect } from '../hooks/useTonConnect.ts';
 import shopService from '../api/services/shopService.ts';
 
 const Market = () => {
-  const { gameStatus, fetchGameStatus } = useGame();
   const { fetchInventory } = useShop();
   const {
     listings,
@@ -13,19 +12,27 @@ const Market = () => {
     loading,
     error,
     fetchListings,
-    purchase,
+    initiatePurchase,
+    completePurchase,
     cancelListing,
     fetchMyListings,
     fetchStats,
-    clearError
+    clearError,
+    formatTon
   } = useMarket();
+
+  const { wallet } = useTonConnect();
 
   const [activeTab, setActiveTab] = useState('browse'); // browse, my-listings
   const [characterFilter, setCharacterFilter] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [sortBy, setSortBy] = useState('newest');
-  const [cancellingListings, setCancellingListings] = useState(new Set()); // Состояние для отслеживания загрузки отмены
+  const [cancellingListings, setCancellingListings] = useState(new Set());
+  const [purchasingListing, setPurchasingListing] = useState(null);
+
+  // Check if wallet is connected
+  const isWalletConnected = !!wallet?.account?.address;
 
   // Fetch data on component mount
   useEffect(() => {
@@ -37,50 +44,86 @@ const Market = () => {
 
   // Apply filters when they change
   useEffect(() => {
-    const minPriceNum = minPrice ? parseInt(minPrice) : undefined;
-    const maxPriceNum = maxPrice ? parseInt(maxPrice) : undefined;
-    fetchListings(characterFilter || undefined, minPriceNum, maxPriceNum, sortBy);
+    const filters = {
+      character_filter: characterFilter || undefined,
+      min_price_nanoton: minPrice ? parseFloat(minPrice) * 1_000_000_000 : undefined, // Convert TON to nanoTON
+      max_price_nanoton: maxPrice ? parseFloat(maxPrice) * 1_000_000_000 : undefined, // Convert TON to nanoTON
+      sort_by: sortBy
+    };
+    fetchListings(filters);
   }, [characterFilter, minPrice, maxPrice, sortBy]);
 
-  const getUserDiamonds = () => {
-    return gameStatus?.diamonds_balance || 0;
-  };
-
   const handlePurchase = async (listing) => {
-    if (getUserDiamonds() < listing.price) {
-      alert(`Not enough diamonds! You need ${listing.price} diamonds but have ${getUserDiamonds()}.`);
+    if (!isWalletConnected) {
+      alert('Please connect your TON wallet to purchase characters.');
       return;
     }
 
-    const result = await purchase({ listing_id: listing.id });
+    setPurchasingListing(listing.id);
     
-    if (result.success) {
-      await fetchGameStatus(); // Refresh balance
-      await fetchInventory(); // Refresh inventory
-      alert(`Successfully purchased ${listing.character.name} (Level ${listing.character.level}) for ${listing.price} diamonds!`);
-    } else {
-      alert(result.error || 'Failed to purchase');
+    try {
+      const result = await initiatePurchase({ listing_id: listing.id });
+      
+      if (result.success && result.payment_required) {
+        const details = result.transaction_details;
+        
+        // Show payment details to user
+        const confirmPurchase = confirm(
+          `Purchase ${details.character_name} (Level ${details.character_level}) for ${details.price_ton} TON?\n\n` +
+          `This will require a TON payment from your wallet.\n` +
+          `Seller: ${details.seller_wallet}\n` +
+          `Your wallet: ${details.buyer_wallet}`
+        );
+        
+        if (confirmPurchase) {
+          // Here you would integrate with TON Connect to send the payment
+          // For now, we'll simulate a successful transaction
+          alert('TON payment integration needed here. This would open your wallet to send the payment.');
+          
+          // Simulate transaction hash (in real implementation, this comes from TON blockchain)
+          const mockTransactionHash = 'mock_tx_' + Date.now();
+          
+          // Complete the purchase
+          const completeResult = await completePurchase({
+            listing_id: listing.id,
+            transaction_hash: mockTransactionHash
+          });
+          
+          if (completeResult.success) {
+            await fetchInventory(); // Refresh inventory
+            await fetchListings(); // Refresh listings
+            alert(`Successfully purchased ${details.character_name} for ${details.price_ton} TON!`);
+          } else {
+            alert(completeResult.error || 'Failed to complete purchase');
+          }
+        }
+      } else {
+        alert(result.error || 'Failed to initiate purchase');
+      }
+    } catch (error) {
+      console.error('Purchase error:', error);
+      alert('Failed to purchase. Please try again.');
+    } finally {
+      setPurchasingListing(null);
     }
   };
 
-
-
   const handleCancelListing = async (listing) => {
-    // Добавляем ID листинга в состояние загрузки
+    // Add listing ID to loading state
     setCancellingListings(prev => new Set([...prev, listing.id]));
     
     try {
       const result = await cancelListing(listing.id);
       
       if (result.success) {
-        // Обновляем только инвентарь, без запроса списка листингов
+        // Refresh inventory without requesting listings again
         await fetchInventory();
         alert(`Listing for ${listing.character.name} has been cancelled`);
       } else {
         alert(result.error || 'Failed to cancel listing');
       }
     } finally {
-      // Убираем ID листинга из состояния загрузки
+      // Remove listing ID from loading state
       setCancellingListings(prev => {
         const newSet = new Set(prev);
         newSet.delete(listing.id);
@@ -88,8 +131,6 @@ const Market = () => {
       });
     }
   };
-
-
 
   if (error) {
     return (
@@ -130,23 +171,12 @@ const Market = () => {
         </button>
       </div>
 
-      {/* Market Stats */}
-      {/* {stats && (
-        <div className="market-stats">
-          <div className="stat-item">
-            <span className="stat-icon">📊</span>
-            Active Listings: {stats.active_listings}
-          </div>
-          <div className="stat-item">
-            <span className="stat-icon">💎</span>
-            Your Diamonds: {getUserDiamonds()}
-          </div>
-          <div className="stat-item">
-            <span className="stat-icon">🤝</span>
-            Total Transactions: {stats.total_transactions}
-          </div>
+      {/* Wallet Status */}
+      {!isWalletConnected && (
+        <div className="wallet-warning-banner">
+          <span>⚠️ Connect your TON wallet to purchase characters</span>
         </div>
-      )} */}
+      )}
 
       {/* Browse Market Tab */}
       {activeTab === 'browse' && (
@@ -172,9 +202,10 @@ const Market = () => {
               <input
                 type="number"
                 className="modern-filter-input"
-                placeholder="Min Price"
+                placeholder="Min Price (TON)"
                 value={minPrice}
                 onChange={(e) => setMinPrice(e.target.value)}
+                step="0.001"
               />
             </div>
 
@@ -183,9 +214,10 @@ const Market = () => {
               <input
                 type="number"
                 className="modern-filter-input"
-                placeholder="Max Price"
+                placeholder="Max Price (TON)"
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(e.target.value)}
+                step="0.001"
               />
             </div>
 
@@ -243,14 +275,16 @@ const Market = () => {
                   <button 
                     className="market-buy-button" 
                     onClick={() => handlePurchase(listing)}
-                    disabled={loading || getUserDiamonds() < listing.price}
+                    disabled={loading || !isWalletConnected || purchasingListing === listing.id}
                   >
-                    <span>{listing.price}</span>
-                    <img 
-                      src="https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp" 
-                      alt="Diamonds" 
-                      className="button-gem-icon"
-                    />
+                    {purchasingListing === listing.id ? (
+                      <span>Processing...</span>
+                    ) : (
+                      <>
+                        <span>{formatTon(listing.price_nanoton)} TON</span>
+                        <span className="ton-icon">💎</span>
+                      </>
+                    )}
                   </button>
                 </div>
               ))
@@ -258,8 +292,6 @@ const Market = () => {
           </div>
         </div>
       )}
-
-
 
       {/* My Listings Tab */}
       {activeTab === 'my-listings' && (
@@ -296,7 +328,10 @@ const Market = () => {
                     Level {listing.character.level}
                   </div>
                   <div className="listing-price">
-                    Price: {listing.price} 💎
+                    Price: {formatTon(listing.price_nanoton)} TON
+                  </div>
+                  <div className="wallet-address">
+                    Wallet: {listing.wallet_address.slice(0, 6)}...{listing.wallet_address.slice(-4)}
                   </div>
                   
                   <button 
