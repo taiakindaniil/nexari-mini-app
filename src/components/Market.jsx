@@ -91,7 +91,6 @@ const Market = () => {
           
           if (completeResult.success) {
             await fetchInventory(); // Refresh inventory
-            await fetchListings(); // Refresh listings
             alert(`Successfully purchased ${details.character_name} for ${details.price_ton} TON!`);
           } else {
             alert(completeResult.error || 'Failed to complete purchase');
@@ -282,7 +281,6 @@ const Market = () => {
                     ) : (
                       <>
                         <span>{formatTon(listing.price_nanoton)} TON</span>
-                        <span className="ton-icon">💎</span>
                       </>
                     )}
                   </button>
