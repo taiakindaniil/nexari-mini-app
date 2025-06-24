@@ -4,7 +4,7 @@ import { useMarket } from '../api/hooks/useMarket.ts';
 import { useTonConnect } from '../hooks/useTonConnect.ts';
 import shopService from '../api/services/shopService.ts';
 import { useTonConnectUI } from '@tonconnect/ui-react';
-import { Address } from '@ton/core';
+// import { Address } from '@ton/core';
 
 const Market = () => {
   const { fetchInventory } = useShop();
@@ -72,6 +72,9 @@ const Market = () => {
       
       if (result.success && result.payment_required) {
         const details = result.transaction_details;
+
+        console.log(details);
+        console.log(listing.wallet_address);
         
         try {
           // Send TON transaction with UUID in payload for monitoring
@@ -79,12 +82,12 @@ const Market = () => {
             validUntil: Date.now() + 15 * 60 * 1000, // 15 minutes
             messages: [
               {
-                address: Address.parse(listing.wallet_address).toString(true, false),
+                address: listing.wallet_address,
                 amount: listing.price_nanoton.toString(),
                 payload: details.transaction_uuid // UUID for tracking
               },
               {
-                address: Address.parse('0:0000000000000000000000000000000000000000000000000000000000000000').toString(true, false),
+                address: '0:0000000000000000000000000000000000000000000000000000000000000000',
                 amount: (listing.price_nanoton * 0.05).toString(),
               }
             ]
