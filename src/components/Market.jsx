@@ -98,6 +98,9 @@ const Market = () => {
           console.error('TON transaction error:', tonError);
           alert('Failed to send TON transaction. Please try again.');
         }
+      } else {
+        // Handle server errors (e.g., "Cannot buy your own listing")
+        alert(result.error || 'Failed to initiate purchase');
       }
     } catch (error) {
       console.error('Purchase error:', error);
