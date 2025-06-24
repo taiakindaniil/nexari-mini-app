@@ -117,6 +117,7 @@ export default function Shop() {
   const [activeTab, setActiveTab] = useState('cases');
   const [upgrading, setUpgrading] = useState(false);
   const [settingActive, setSettingActive] = useState(false);
+  const [loadingCaseId, setLoadingCaseId] = useState(null);
   
   // Sell modal state
   const [showSellModal, setShowSellModal] = useState(false);
@@ -263,8 +264,9 @@ export default function Shop() {
   }, []);
 
   const handleCaseClick = (caseData) => {
-    if (isAnimationActive) return;
+    if (isAnimationActive || loadingCaseId === caseData.id) return;
     
+    setLoadingCaseId(caseData.id);
     const paymentMethod = shopService.getPaymentMethod(caseData);
     showCaseAnimation(caseData, paymentMethod);
   };
@@ -345,6 +347,7 @@ export default function Shop() {
       setTimeout(() => {
         overlay.remove();
         setIsAnimationActive(false);
+        setLoadingCaseId(null);
       }, 500);
     };
 
@@ -574,46 +577,58 @@ export default function Shop() {
       {activeTab === 'cases' && (
         <div className="cases-content">
           <div className="cases-grid">
-            {cases.map((caseData) => (
-              <div 
-                key={caseData.id}
-                className={`case-container ${shopService.getRarityClass(caseData.rarity)}`} 
-                onClick={() => handleCaseClick(caseData)}
-              >
-                <div className={`case-rarity ${shopService.getRarityClass(caseData.rarity)}-rarity`}>
-                  {shopService.getRarityLabel(caseData.rarity)}
-                </div>
-                <img 
-                  alt={caseData.name} 
-                  className="case-image" 
-                  src={caseData.image_url} 
-                />
-                <div className="case-name">{caseData.name}</div>
-                <div className="case-description">{caseData.description}</div>
-                <div className={`case-price ${caseData.is_free ? 'free' : ''}`}>
-                  {caseData.is_free ? (
-                    'Free'
-                  ) : caseData.price_diamonds ? (
-                    <>
-                      <img src="https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp" alt="Diamond" className="price-icon" />
-                      {caseData.price_diamonds} Diamonds
-                    </>
-                  ) : caseData.price_ton ? (
-                    <>
-                      <span className="ton-icon">💎</span>
-                      {caseData.price_ton} TON
-                    </>
-                  ) : (
-                    'Free'
+            {cases.map((caseData) => {
+              const isLoadingThisCase = loadingCaseId === caseData.id;
+              return (
+                <div 
+                  key={caseData.id}
+                  className={`case-container ${shopService.getRarityClass(caseData.rarity)} ${isLoadingThisCase ? 'loading' : ''}`} 
+                  onClick={() => handleCaseClick(caseData)}
+                  style={{ pointerEvents: isLoadingThisCase ? 'none' : 'auto', opacity: isLoadingThisCase ? 0.7 : 1 }}
+                >
+                  <div className={`case-rarity ${shopService.getRarityClass(caseData.rarity)}-rarity`}>
+                    {shopService.getRarityLabel(caseData.rarity)}
+                  </div>
+                  
+                  {isLoadingThisCase && (
+                    <div className="case-loading-overlay">
+                      <div className="loading-spinner"></div>
+                      <div className="loading-text">Opening...</div>
+                    </div>
+                  )}
+                  
+                  <img 
+                    alt={caseData.name} 
+                    className="case-image" 
+                    src={caseData.image_url} 
+                  />
+                  <div className="case-name">{caseData.name}</div>
+                  <div className="case-description">{caseData.description}</div>
+                  <div className={`case-price ${caseData.is_free ? 'free' : ''}`}>
+                    {caseData.is_free ? (
+                      'Free'
+                    ) : caseData.price_diamonds ? (
+                      <>
+                        <img src="https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp" alt="Diamond" className="price-icon" />
+                        {caseData.price_diamonds} Diamonds
+                      </>
+                    ) : caseData.price_ton ? (
+                      <>
+                        <span className="ton-icon">💎</span>
+                        {caseData.price_ton} TON
+                      </>
+                    ) : (
+                      'Free'
+                    )}
+                  </div>
+                  {caseData.max_daily_opens && (
+                    <div className="daily-limit">
+                      Max {caseData.max_daily_opens}/day
+                    </div>
                   )}
                 </div>
-                {caseData.max_daily_opens && (
-                  <div className="daily-limit">
-                    Max {caseData.max_daily_opens}/day
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
