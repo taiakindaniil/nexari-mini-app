@@ -256,6 +256,21 @@ class ShopService {
     return rarityMap[rarity] || 'common';
   }
 
+  getRarityColor(rarity: string | undefined | null): string {
+    if (!rarity) {
+      return '#000000';  // Значение по умолчанию
+    }
+    const rarityMap: Record<string, string> = {
+      'common': '#000000',
+      'rare': '#000000',
+      'epic': '#000000',
+      'legendary': '#000000',
+      'premium': '#000000', 
+      'exclusive': '#000000'
+    };
+    return rarityMap[rarity] || '#000000';
+  }
+
   /**
    * Get rarity label
    */
