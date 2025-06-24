@@ -25,6 +25,7 @@ const Market = () => {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [cancellingListings, setCancellingListings] = useState(new Set()); // Состояние для отслеживания загрузки отмены
 
   // Fetch data on component mount
   useEffect(() => {
@@ -46,8 +47,6 @@ const Market = () => {
   };
 
   const handlePurchase = async (listing) => {
-    console.log('Purchase button clicked for listing:', listing);
-    
     if (getUserDiamonds() < listing.price) {
       alert(`Not enough diamonds! You need ${listing.price} diamonds but have ${getUserDiamonds()}.`);
       return;
@@ -67,15 +66,26 @@ const Market = () => {
 
 
   const handleCancelListing = async (listing) => {
-    console.log('Cancel listing button clicked for listing:', listing);
+    // Добавляем ID листинга в состояние загрузки
+    setCancellingListings(prev => new Set([...prev, listing.id]));
     
-    const result = await cancelListing(listing.id);
-    
-    if (result.success) {
-      await fetchInventory(); // Refresh inventory
-      alert(`Listing for ${listing.character.name} has been cancelled`);
-    } else {
-      alert(result.error || 'Failed to cancel listing');
+    try {
+      const result = await cancelListing(listing.id);
+      
+      if (result.success) {
+        // Обновляем только инвентарь, без запроса списка листингов
+        await fetchInventory();
+        alert(`Listing for ${listing.character.name} has been cancelled`);
+      } else {
+        alert(result.error || 'Failed to cancel listing');
+      }
+    } finally {
+      // Убираем ID листинга из состояния загрузки
+      setCancellingListings(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(listing.id);
+        return newSet;
+      });
     }
   };
 
@@ -292,9 +302,16 @@ const Market = () => {
                   <button 
                     className="cancel-listing-button" 
                     onClick={() => handleCancelListing(listing)}
-                    disabled={loading}
+                    disabled={cancellingListings.has(listing.id)}
                   >
-                    Cancel Listing
+                    {cancellingListings.has(listing.id) ? (
+                      <>
+                        <div className="loading-spinner" style={{ width: '16px', height: '16px', marginRight: '8px' }}></div>
+                        Cancelling...
+                      </>
+                    ) : (
+                      'Cancel Listing'
+                    )}
                   </button>
                 </div>
               ))

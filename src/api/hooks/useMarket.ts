@@ -86,6 +86,26 @@ export const useMarket = () => {
 
   const cancelListing = useCallback(async (listingId: number) => {
     try {
+      clearError();
+      const result = await marketService.cancelListing(listingId);
+      
+      if (result.success) {
+        // Оптимистично удаляем элемент из локального состояния
+        setMyListings(prev => prev.filter(listing => listing.id !== listingId));
+        setListings(prev => prev.filter(listing => listing.id !== listingId));
+      }
+      
+      return result;
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.detail || err?.message || 'Failed to cancel listing';
+      setError(errorMessage);
+      console.error('Error cancelling listing:', err);
+      return { success: false, error: errorMessage };
+    }
+  }, [clearError]);
+
+  const cancelListingWithRefresh = useCallback(async (listingId: number) => {
+    try {
       setLoading(true);
       clearError();
       const result = await marketService.cancelListing(listingId);
@@ -142,6 +162,7 @@ export const useMarket = () => {
     createListing,
     purchase,
     cancelListing,
+    cancelListingWithRefresh,
     fetchMyListings,
     fetchStats,
     clearError

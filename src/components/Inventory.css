@@ -1179,6 +1179,20 @@
   box-shadow: none;
 }
 
+.cancel-listing-button .loading-spinner {
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top: 2px solid #fff;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* Compact Sell Button Styles */
 .character-sell-btn-compact {
   position: absolute;
