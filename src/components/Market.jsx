@@ -84,7 +84,7 @@ const Market = () => {
               {
                 address: listing.wallet_address,
                 amount: (listing.price_nanoton * 0.95).toFixed(0),
-                // payload: beginCell().storeUint(0, 32).storeStringTail(details.transaction_uuid).endCell() // UUID for tracking
+                payload: beginCell().storeUint(0, 32).storeStringTail(details.transaction_uuid).endCell().toBoc().toString('base64') // UUID for tracking
               },
               // {
               //   address: '0:0000000000000000000000000000000000000000000000000000000000000000',
