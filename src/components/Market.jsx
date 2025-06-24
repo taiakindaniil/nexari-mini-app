@@ -86,10 +86,10 @@ const Market = () => {
                 amount: listing.price_nanoton.toString(),
                 payload: details.transaction_uuid // UUID for tracking
               },
-              {
-                address: '0:0000000000000000000000000000000000000000000000000000000000000000',
-                amount: (listing.price_nanoton * 0.05).toString(),
-              }
+              // {
+              //   address: '',
+              //   amount: (listing.price_nanoton * 0.05).toFixed(0),
+              // }
             ]
           });
           
