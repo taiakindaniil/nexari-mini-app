@@ -136,7 +136,7 @@ const Market = () => {
 
       {/* Browse Market Tab */}
       {activeTab === 'browse' && (
-        <div className="browse-market-tab">
+        <div className="browse-market-tab" style={{width: '100%'}}>
           {/* Filters */}
           <div className="market-filters">
             <div className="filter-group">
@@ -249,7 +249,7 @@ const Market = () => {
 
       {/* My Listings Tab */}
       {activeTab === 'my-listings' && (
-        <div className="my-listings-tab">
+        <div className="my-listings-tab" style={{width: '100%'}}>
           <h3>My Active Listings</h3>
           
           <div className="market-grid">

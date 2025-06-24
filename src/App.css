@@ -1501,14 +1501,12 @@ main {
 /* Market Grid */
 .market-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit,minmax(175px,1fr));
     gap: 1.5rem;
     width: 100%;
-    max-width: 1200px;
     margin: 0 auto;
     padding: 1rem;
     padding-bottom: 2rem;
-    overflow-y: visible;
 }
 
 .market-item {
