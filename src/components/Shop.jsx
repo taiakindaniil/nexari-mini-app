@@ -451,8 +451,8 @@ export default function Shop() {
       } else {
         item = {
           type: 'character',
-          name: randomReward.character?.name || 'Unknown Character',
-          src: randomReward.character?.image_url || 'https://em-content.zobj.net/source/telegram/386/video-game_1f3ae.webp',
+          name: randomReward.character_name || 'Unknown Character',
+          src: randomReward.image_url || 'https://em-content.zobj.net/source/telegram/386/video-game_1f3ae.webp',
           background: shopService.getRarityColor(randomReward.character?.rarity),
           value: null
         };

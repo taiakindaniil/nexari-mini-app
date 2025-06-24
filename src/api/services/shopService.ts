@@ -103,6 +103,7 @@ export interface CaseDetails {
     diamonds_min?: number;
     diamonds_max?: number;
     character_name?: string;
+    rarity?: string;
     image_url?: string;
     min_level?: number;
     max_level?: number;
