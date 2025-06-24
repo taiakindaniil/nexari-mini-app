@@ -3,8 +3,10 @@ import marketService, {
   MarketListing,
   CreateListingRequest,
   PurchaseRequest,
+  CompletePurchaseRequest,
   UserListing,
-  MarketStats
+  MarketStats,
+  MarketFilters
 } from '../services/marketService';
 
 export const useMarket = () => {
@@ -18,18 +20,11 @@ export const useMarket = () => {
     setError(null);
   }, []);
 
-  const fetchListings = useCallback(async (
-    characterFilter?: string,
-    minPrice?: number,
-    maxPrice?: number,
-    sortBy: string = 'newest',
-    limit: number = 50,
-    offset: number = 0
-  ) => {
+  const fetchListings = useCallback(async (filters: MarketFilters = {}) => {
     try {
       setLoading(true);
       clearError();
-      const data = await marketService.getListings(characterFilter, minPrice, maxPrice, sortBy, limit, offset);
+      const data = await marketService.getMarketListings(filters);
       setListings(data);
     } catch (err: any) {
       setError(err?.response?.data?.detail || err?.message || 'Failed to fetch market listings');
@@ -62,22 +57,39 @@ export const useMarket = () => {
     }
   }, [clearError, fetchListings]);
 
-  const purchase = useCallback(async (request: PurchaseRequest) => {
+  const initiatePurchase = useCallback(async (request: PurchaseRequest) => {
     try {
       setLoading(true);
       clearError();
-      const result = await marketService.purchase(request);
+      const result = await marketService.purchaseFromMarket(request);
+      
+      return result;
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.detail || err?.message || 'Failed to initiate purchase';
+      setError(errorMessage);
+      console.error('Error initiating purchase:', err);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  }, [clearError]);
+
+  const completePurchase = useCallback(async (request: CompletePurchaseRequest) => {
+    try {
+      setLoading(true);
+      clearError();
+      const result = await marketService.completePurchase(request);
       
       if (result.success) {
-        // Refresh listings after purchase
+        // Refresh listings after successful purchase
         await fetchListings();
       }
       
       return result;
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.detail || err?.message || 'Failed to purchase';
+      const errorMessage = err?.response?.data?.detail || err?.message || 'Failed to complete purchase';
       setError(errorMessage);
-      console.error('Error purchasing from market:', err);
+      console.error('Error completing purchase:', err);
       return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
@@ -90,7 +102,7 @@ export const useMarket = () => {
       const result = await marketService.cancelListing(listingId);
       
       if (result.success) {
-        // Оптимистично удаляем элемент из локального состояния
+        // Optimistically remove item from local state
         setMyListings(prev => prev.filter(listing => listing.id !== listingId));
         setListings(prev => prev.filter(listing => listing.id !== listingId));
       }
@@ -131,7 +143,7 @@ export const useMarket = () => {
     try {
       setLoading(true);
       clearError();
-      const data = await marketService.getMyListings();
+      const data = await marketService.getUserListings();
       setMyListings(data);
     } catch (err: any) {
       setError(err?.response?.data?.detail || err?.message || 'Failed to fetch my listings');
@@ -144,13 +156,26 @@ export const useMarket = () => {
   const fetchStats = useCallback(async () => {
     try {
       clearError();
-      const data = await marketService.getStats();
+      const data = await marketService.getMarketStats();
       setStats(data);
     } catch (err: any) {
       setError(err?.response?.data?.detail || err?.message || 'Failed to fetch market stats');
       console.error('Error fetching market stats:', err);
     }
   }, [clearError]);
+
+  // Utility methods for TON conversion
+  const tonToNanoTon = useCallback((ton: number) => {
+    return marketService.tonToNanoTon(ton);
+  }, []);
+
+  const nanoTonToTon = useCallback((nanoTon: number) => {
+    return marketService.nanoTonToTon(nanoTon);
+  }, []);
+
+  const formatTon = useCallback((nanoTon: number, decimals: number = 3) => {
+    return marketService.formatTon(nanoTon, decimals);
+  }, []);
 
   return {
     listings,
@@ -160,11 +185,16 @@ export const useMarket = () => {
     error,
     fetchListings,
     createListing,
-    purchase,
+    initiatePurchase,
+    completePurchase,
     cancelListing,
     cancelListingWithRefresh,
     fetchMyListings,
     fetchStats,
-    clearError
+    clearError,
+    // TON utility methods
+    tonToNanoTon,
+    nanoTonToTon,
+    formatTon
   };
 }; 

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useGame } from '../context/GameContext';
 import { useShop } from '../api/hooks/useShop.ts';
 import { useMarket } from '../api/hooks/useMarket.ts';
+import { useTonConnect } from '../hooks/useTonConnect.ts';
 import shopService from '../api/services/shopService.ts';
 import './Inventory.css';
 
@@ -14,7 +15,8 @@ const SellModal = React.memo(({
   onPriceChange, 
   onConfirm, 
   onCancel, 
-  selling 
+  selling,
+  isWalletConnected 
 }) => {
   if (!isOpen) return null;
 
@@ -31,7 +33,7 @@ const SellModal = React.memo(({
   return createPortal(
     <div className="sell-modal-overlay visible" onClick={handleOverlayClick}>
       <div className="sell-modal">
-        <h3>Sell Character</h3>
+        <h3>Sell Character for TON</h3>
         {character && (
           <div className="sell-character-info">
             <img 
@@ -50,23 +52,32 @@ const SellModal = React.memo(({
           </div>
         )}
         
-        <div className="sell-price-input">
-          <label htmlFor="sellPrice">Price (Diamonds):</label>
-          <input
-            id="sellPrice"
-            type="number"
-            value={price}
-            onChange={(e) => onPriceChange(e.target.value)}
-            placeholder="Enter price in diamonds"
-            min="1"
-          />
-        </div>
+        {!isWalletConnected ? (
+          <div className="wallet-warning">
+            <p>⚠️ You need to connect your TON wallet to sell characters</p>
+            <p>Please connect your wallet first</p>
+          </div>
+        ) : (
+          <div className="sell-price-input">
+            <label htmlFor="sellPrice">Price (TON):</label>
+            <input
+              id="sellPrice"
+              type="number"
+              value={price}
+              onChange={(e) => onPriceChange(e.target.value)}
+              placeholder="Enter price in TON (minimum 0.001)"
+              min="0.001"
+              step="0.001"
+            />
+            <small>Minimum price: 0.001 TON</small>
+          </div>
+        )}
         
         <div className="sell-modal-actions">
           <button 
             className="sell-confirm-btn"
             onClick={onConfirm}
-            disabled={selling || !price}
+            disabled={selling || !price || !isWalletConnected}
           >
             {selling ? 'Listing...' : 'List for Sale'}
           </button>
@@ -99,7 +110,8 @@ export default function Shop() {
     clearError
   } = useShop();
   
-  const { createListing } = useMarket();
+  const { createListing, tonToNanoTon } = useMarket();
+  const { wallet } = useTonConnect();
   
   const [isAnimationActive, setIsAnimationActive] = useState(false);
   const [activeTab, setActiveTab] = useState('cases');
@@ -111,6 +123,9 @@ export default function Shop() {
   const [selectedCharacterForSale, setSelectedCharacterForSale] = useState(null);
   const [sellPrice, setSellPrice] = useState('');
   const [selling, setSelling] = useState(false);
+
+  // Check if wallet is connected
+  const isWalletConnected = !!wallet?.account?.address;
 
   // Fetch data on component mount
   useEffect(() => {
@@ -183,9 +198,15 @@ export default function Shop() {
       alert('Cannot sell active character! Set another character as active first.');
       return;
     }
+    
+    if (!isWalletConnected) {
+      alert('Please connect your TON wallet to sell characters.');
+      return;
+    }
+    
     setSelectedCharacterForSale(character);
     setShowSellModal(true);
-  }, []);
+  }, [isWalletConnected]);
 
   const handleSellSubmit = useCallback(async () => {
     if (!selectedCharacterForSale || !sellPrice) {
@@ -193,17 +214,25 @@ export default function Shop() {
       return;
     }
 
-    const price = parseInt(sellPrice);
-    if (isNaN(price) || price <= 0) {
-      alert('Please enter a valid price');
+    if (!isWalletConnected) {
+      alert('Please connect your TON wallet first');
       return;
     }
+
+    const priceInTon = parseFloat(sellPrice);
+    if (isNaN(priceInTon) || priceInTon < 0.001) {
+      alert('Please enter a valid price (minimum 0.001 TON)');
+      return;
+    }
+
+    // Convert TON to nanoTON
+    const priceInNanoTon = tonToNanoTon(priceInTon);
 
     setSelling(true);
     try {
       const result = await createListing({
         user_character_id: selectedCharacterForSale.id,
-        price: price
+        price_nanoton: priceInNanoTon
       });
 
       if (result.success) {
@@ -211,14 +240,17 @@ export default function Shop() {
         setShowSellModal(false);
         setSelectedCharacterForSale(null);
         setSellPrice('');
-        alert(`Successfully listed ${selectedCharacterForSale.character_name || selectedCharacterForSale.name} (Level ${selectedCharacterForSale.level}) for ${price} diamonds!`);
+        alert(`Successfully listed ${selectedCharacterForSale.character_name || selectedCharacterForSale.name} (Level ${selectedCharacterForSale.level}) for ${priceInTon} TON!`);
       } else {
         alert(result.error || 'Failed to create listing');
       }
+    } catch (err) {
+      console.error('Error creating listing:', err);
+      alert('Failed to create listing. Please try again.');
     } finally {
       setSelling(false);
     }
-  }, [selectedCharacterForSale, sellPrice, createListing, fetchInventory]);
+  }, [selectedCharacterForSale, sellPrice, createListing, fetchInventory, isWalletConnected, tonToNanoTon]);
 
   const handleSellCancel = useCallback(() => {
     setShowSellModal(false);
@@ -398,139 +430,81 @@ export default function Shop() {
 
   // Helper function to generate real roulette items from case details
   const generateRealRouletteItems = (caseDetails) => {
-    const backgrounds = [
-      'linear-gradient(135deg, #ffafbd, #ffc3a0)',
-      'linear-gradient(135deg, #89f7fe, #66a6ff)',
-      'linear-gradient(135deg, #f6d365, #fda085)',
-      'linear-gradient(135deg, #84fab0, #8fd3f4)',
-      '#ffcc70',
-      'linear-gradient(135deg, #d299c2, #fef9d7)',
-      '#000000',
-      'linear-gradient(135deg, #667eea, #764ba2)',
-      'linear-gradient(135deg, #ffecd2, #fcb69f)',
-      '#d3f8e2'
-    ];
-
-    const realItems = [];
+    const items = [];
+    const totalItems = 40;
     
-    // Convert case rewards to roulette items
-    caseDetails.rewards.forEach(reward => {
-      if (reward.reward_type === 'diamonds') {
-        const diamondAmount = reward.diamonds_min || 100;
-        realItems.push({
+    for (let i = 0; i < totalItems; i++) {
+      const randomReward = caseDetails.rewards[Math.floor(Math.random() * caseDetails.rewards.length)];
+      
+      let item;
+      if (randomReward.reward_type === 'diamonds') {
+        item = {
           type: 'diamonds',
           name: 'Diamonds',
-          src: reward.image_url || 'https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp',
-          background: backgrounds[5], // Use a specific background for diamonds
-          value: diamondAmount,
-          is_mutated: false
-        });
-      } else if (reward.reward_type === 'character' && reward.character_name) {
-        // Create character items with different mutation states
-        const baseCharacter = {
-          type: 'character',
-          name: reward.character_name,
-          src: reward.image_url,
-          background: backgrounds[Math.floor(Math.random() * backgrounds.length)],
-          is_mutated: false
+          src: 'https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp',
+          background: '#4CAF50',
+          value: randomReward.reward_diamonds
         };
-        
-        realItems.push(baseCharacter);
-        
-        // Add mutated version if mutation is possible
-        if (reward.is_mutated_chance && reward.is_mutated_chance > 0) {
-          realItems.push({
-            ...baseCharacter,
-            is_mutated: true
-          });
-        }
+      } else {
+        item = {
+          type: 'character',
+          name: randomReward.character?.name || 'Unknown Character',
+          src: randomReward.character?.image_url || 'https://em-content.zobj.net/source/telegram/386/video-game_1f3ae.webp',
+          background: shopService.getRarityColor(randomReward.character?.rarity),
+          value: null
+        };
       }
-    });
-
-    // If no items found, fallback to basic items
-    // if (realItems.length === 0) {
-    //   realItems.push({
-    //     type: 'diamonds',
-    //     name: 'Diamonds',
-    //     src: 'https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp',
-    //     background: backgrounds[5],
-    //     value: 100,
-    //     is_mutated: false
-    //   });
-    // }
-
-    // Generate 40 items for roulette, randomly selecting from real items
-    const rouletteItems = [];
-    for (let i = 0; i < 40; i++) {
-      const randomItem = realItems[Math.floor(Math.random() * realItems.length)];
-      rouletteItems.push({
-        ...randomItem,
-        // Randomize diamond values and backgrounds for variety
-        value: randomItem.type === 'diamonds' ? 
-          Math.floor(Math.random() * 200) + 50 : randomItem.value,
-        background: backgrounds[Math.floor(Math.random() * backgrounds.length)]
-      });
+      
+      items.push(item);
     }
-
-    return rouletteItems;
-  };
-
-  // Helper function to generate preview roulette items
-  const generatePreviewRouletteItems = () => {
-    const backgrounds = [
-      'linear-gradient(135deg, #ffafbd, #ffc3a0)',
-      'linear-gradient(135deg, #89f7fe, #66a6ff)',
-      'linear-gradient(135deg, #f6d365, #fda085)',
-      'linear-gradient(135deg, #84fab0, #8fd3f4)',
-      '#ffcc70',
-      'linear-gradient(135deg, #d299c2, #fef9d7)',
-      '#000000',
-      'linear-gradient(135deg, #667eea, #764ba2)',
-      'linear-gradient(135deg, #ffecd2, #fcb69f)',
-      '#d3f8e2'
-    ];
-
-    const dummyItems = [
-      { src: "https://em-content.zobj.net/source/telegram/386/monkey-face_1f435.webp", name: "Monkey" },
-      { src: "https://em-content.zobj.net/source/telegram/386/gorilla_1f98d.webp", name: "Gorilla" },
-      { src: "https://em-content.zobj.net/source/telegram/386/dog-face_1f436.webp", name: "Dog" },
-      { src: "https://em-content.zobj.net/source/telegram/386/cat-face_1f431.webp", name: "Cat" },
-      { src: "https://em-content.zobj.net/source/telegram/386/lion_1f981.webp", name: "Lion" },
-      { src: "https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp", name: "Diamonds" },
-      { src: "https://em-content.zobj.net/source/telegram/386/robot_1f916.webp", name: "Robot" },
-      { src: "https://em-content.zobj.net/source/telegram/386/alien_1f47d.webp", name: "Alien" },
-      { src: "https://em-content.zobj.net/source/telegram/386/unicorn_1f984.webp", name: "Unicorn" },
-      { src: "https://em-content.zobj.net/source/telegram/386/dragon_1f409.webp", name: "Dragon" }
-    ];
-
-    const previewItems = [];
     
-    for (let i = 0; i < 40; i++) {
-      const randomItem = dummyItems[Math.floor(Math.random() * dummyItems.length)];
-      previewItems.push({
-        type: randomItem.name === "Diamonds" ? "diamonds" : "character",
-        name: randomItem.name,
-        src: randomItem.src,
-        is_mutated: randomItem.name !== "Diamonds" && Math.random() < 0.1,
-        background: backgrounds[Math.floor(Math.random() * backgrounds.length)],
-        value: randomItem.name === "Diamonds" ? Math.floor(Math.random() * 250) + 1 : undefined,
-      });
-    }
-
-    return previewItems;
+    return items;
   };
 
-  // Helper function to render roulette items
+  const generatePreviewRouletteItems = () => {
+    const items = [];
+    const totalItems = 40;
+    
+    for (let i = 0; i < totalItems; i++) {
+      const isDiamond = Math.random() < 0.3;
+      
+      let item;
+      if (isDiamond) {
+        item = {
+          type: 'diamonds',
+          name: 'Diamonds',
+          src: 'https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp',
+          background: '#4CAF50',
+          value: Math.floor(Math.random() * 1000) + 100
+        };
+      } else {
+        const characters = [
+          { name: 'Warrior', rarity: 'common' },
+          { name: 'Mage', rarity: 'rare' },
+          { name: 'Dragon', rarity: 'legendary' }
+        ];
+        const char = characters[Math.floor(Math.random() * characters.length)];
+        
+        item = {
+          type: 'character',
+          name: char.name,
+          src: 'https://em-content.zobj.net/source/telegram/386/video-game_1f3ae.webp',
+          background: shopService.getRarityColor(char.rarity),
+          value: null
+        };
+      }
+      
+      items.push(item);
+    }
+    
+    return items;
+  };
+
   const renderRouletteItems = (container, items) => {
     items.forEach((item, index) => {
       const itemDiv = document.createElement("div");
       itemDiv.className = "roulette-item";
-      itemDiv.style.background = item.background;
-      
-      const bgDiv = document.createElement("div");
-      bgDiv.className = "animation-background";
-      bgDiv.style.background = item.background;
-      itemDiv.appendChild(bgDiv);
+      itemDiv.style.backgroundColor = item.background;
 
       const img = document.createElement("img");
       img.src = item.src;
@@ -709,7 +683,8 @@ export default function Shop() {
                           className="character-sell-btn-compact"
                           onClick={() => handleSellClick(character)}
                           disabled={character.is_active}
-                          title={character.is_active ? "Cannot sell active character" : "Sell this character"}
+                          title={character.is_active ? "Cannot sell active character" : 
+                                 !isWalletConnected ? "Connect TON wallet to sell" : "Sell this character for TON"}
                         >
                           💰
                         </button>
@@ -731,6 +706,7 @@ export default function Shop() {
         onConfirm={handleSellSubmit}
         onCancel={handleSellCancel}
         selling={selling}
+        isWalletConnected={isWalletConnected}
       />
     </div>
   );

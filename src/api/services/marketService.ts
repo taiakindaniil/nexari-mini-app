@@ -12,13 +12,15 @@ export interface MarketListing {
     rarity: string;
     income_rate: number;
   };
-  price: number;
+  price_nanoton: number;
+  price_ton: number;
+  wallet_address: string;
   created_at: string;
 }
 
 export interface CreateListingRequest {
   user_character_id: number;
-  price: number;
+  price_nanoton: number;
 }
 
 export interface CreateListingResponse {
@@ -28,7 +30,9 @@ export interface CreateListingResponse {
     id: number;
     character_name: string;
     character_level: number;
-    price: number;
+    price_nanoton: number;
+    price_ton: number;
+    wallet_address: string;
     created_at: string;
   };
 }
@@ -40,15 +44,36 @@ export interface PurchaseRequest {
 export interface PurchaseResponse {
   success: boolean;
   error?: string;
+  payment_required?: boolean;
+  transaction_details?: {
+    listing_id: number;
+    character_name: string;
+    character_level: number;
+    price_nanoton: number;
+    price_ton: number;
+    seller_wallet: string;
+    buyer_wallet: string;
+  };
+}
+
+export interface CompletePurchaseRequest {
+  listing_id: number;
+  transaction_hash: string;
+}
+
+export interface CompletePurchaseResponse {
+  success: boolean;
+  error?: string;
   transaction?: {
     id: number;
     character_name: string;
     character_level: number;
-    price: number;
-    commission: number;
-    seller_payout: number;
+    price_nanoton: number;
+    price_ton: number;
+    commission_nanoton: number;
+    commission_ton: number;
+    transaction_hash: string;
   };
-  buyer_remaining_balance?: number;
 }
 
 export interface UserListing {
@@ -59,7 +84,9 @@ export interface UserListing {
     level: number;
     rarity: string;
   };
-  price: number;
+  price_nanoton: number;
+  price_ton: number;
+  wallet_address: string;
   created_at: string;
 }
 
@@ -68,73 +95,122 @@ export interface MarketStats {
   total_transactions: number;
 }
 
+export interface MarketFilters {
+  character_filter?: string;
+  min_price_nanoton?: number;
+  max_price_nanoton?: number;
+  sort_by?: 'newest' | 'price_asc' | 'price_desc' | 'level_desc';
+  limit?: number;
+  offset?: number;
+}
+
 /**
  * Service for handling market-related API calls
  */
 class MarketService {
   /**
-   * Get market listings with filters
-   */
-  async getListings(
-    characterFilter?: string,
-    minPrice?: number,
-    maxPrice?: number,
-    sortBy: string = 'newest',
-    limit: number = 50,
-    offset: number = 0
-  ): Promise<MarketListing[]> {
-    const params: any = {
-      sort_by: sortBy,
-      limit,
-      offset
-    };
-    
-    if (characterFilter) params.character_filter = characterFilter;
-    if (minPrice !== undefined) params.min_price = minPrice;
-    if (maxPrice !== undefined) params.max_price = maxPrice;
-    
-    const response = await apiClient.get<MarketListing[]>('/market/listings', { params });
-    return response.data;
-  }
-
-  /**
    * Create a new market listing
+   * @param request - Listing creation request
+   * @returns Promise with creation result
    */
   async createListing(request: CreateListingRequest): Promise<CreateListingResponse> {
-    const response = await apiClient.post<CreateListingResponse>('/market/listings', request);
-    return response.data;
+    const { data } = await apiClient.post<CreateListingResponse>('/market/listings', request);
+    return data;
   }
 
   /**
-   * Purchase from market
+   * Get market listings with optional filters
+   * @param filters - Optional filters for listings
+   * @returns Promise with array of listings
    */
-  async purchase(request: PurchaseRequest): Promise<PurchaseResponse> {
-    const response = await apiClient.post<PurchaseResponse>('/market/purchase', request);
-    return response.data;
+  async getMarketListings(filters: MarketFilters = {}): Promise<MarketListing[]> {
+    const params = new URLSearchParams();
+    
+    if (filters.character_filter) params.append('character_filter', filters.character_filter);
+    if (filters.min_price_nanoton !== undefined) params.append('min_price_nanoton', filters.min_price_nanoton.toString());
+    if (filters.max_price_nanoton !== undefined) params.append('max_price_nanoton', filters.max_price_nanoton.toString());
+    if (filters.sort_by) params.append('sort_by', filters.sort_by);
+    if (filters.limit !== undefined) params.append('limit', filters.limit.toString());
+    if (filters.offset !== undefined) params.append('offset', filters.offset.toString());
+
+    const { data } = await apiClient.get<MarketListing[]>(`/market/listings?${params.toString()}`);
+    return data;
   }
 
   /**
-   * Cancel a listing
+   * Initiate purchase from market
+   * @param request - Purchase request
+   * @returns Promise with purchase initiation result
    */
-  async cancelListing(listingId: number): Promise<{ success: boolean; message?: string; error?: string }> {
-    const response = await apiClient.delete(`/market/listings/${listingId}`);
-    return response.data;
+  async purchaseFromMarket(request: PurchaseRequest): Promise<PurchaseResponse> {
+    const { data } = await apiClient.post<PurchaseResponse>('/market/purchase', request);
+    return data;
+  }
+
+  /**
+   * Complete purchase after TON payment
+   * @param request - Complete purchase request
+   * @returns Promise with completion result
+   */
+  async completePurchase(request: CompletePurchaseRequest): Promise<CompletePurchaseResponse> {
+    const { data } = await apiClient.post<CompletePurchaseResponse>('/market/complete-purchase', request);
+    return data;
+  }
+
+  /**
+   * Cancel a market listing
+   * @param listingId - ID of the listing to cancel
+   * @returns Promise with cancellation result
+   */
+  async cancelListing(listingId: number): Promise<{ success: boolean; message: string }> {
+    const { data } = await apiClient.delete(`/market/listings/${listingId}`);
+    return data;
   }
 
   /**
    * Get user's active listings
+   * @returns Promise with array of user's listings
    */
-  async getMyListings(): Promise<UserListing[]> {
-    const response = await apiClient.get<UserListing[]>('/market/my-listings');
-    return response.data;
+  async getUserListings(): Promise<UserListing[]> {
+    const { data } = await apiClient.get<UserListing[]>('/market/my-listings');
+    return data;
   }
 
   /**
    * Get market statistics
+   * @returns Promise with market stats
    */
-  async getStats(): Promise<MarketStats> {
-    const response = await apiClient.get<MarketStats>('/market/stats');
-    return response.data;
+  async getMarketStats(): Promise<MarketStats> {
+    const { data } = await apiClient.get<MarketStats>('/market/stats');
+    return data;
+  }
+
+  /**
+   * Convert TON to nanoTON
+   * @param ton - Amount in TON
+   * @returns Amount in nanoTON
+   */
+  tonToNanoTon(ton: number): number {
+    return Math.floor(ton * 1_000_000_000);
+  }
+
+  /**
+   * Convert nanoTON to TON
+   * @param nanoTon - Amount in nanoTON
+   * @returns Amount in TON
+   */
+  nanoTonToTon(nanoTon: number): number {
+    return nanoTon / 1_000_000_000;
+  }
+
+  /**
+   * Format TON amount for display
+   * @param nanoTon - Amount in nanoTON
+   * @param decimals - Number of decimal places
+   * @returns Formatted TON string
+   */
+  formatTon(nanoTon: number, decimals: number = 3): string {
+    return this.nanoTonToTon(nanoTon).toFixed(decimals);
   }
 }
 
