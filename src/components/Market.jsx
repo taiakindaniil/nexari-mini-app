@@ -4,7 +4,7 @@ import { useMarket } from '../api/hooks/useMarket.ts';
 import { useTonConnect } from '../hooks/useTonConnect.ts';
 import shopService from '../api/services/shopService.ts';
 import { useTonConnectUI } from '@tonconnect/ui-react';
-// import { Address } from '@ton/core';
+import { beginCell } from '@ton/core';
 
 const Market = () => {
   const { fetchInventory } = useShop();
@@ -83,13 +83,13 @@ const Market = () => {
             messages: [
               {
                 address: listing.wallet_address,
-                amount: listing.price_nanoton.toString(),
-                payload: details.transaction_uuid // UUID for tracking
+                amount: (listing.price_nanoton * 0.95).toFixed(0),
+                payload: beginCell().storeUint(0, 32).storeStringTail(details.transaction_uuid).endCell() // UUID for tracking
               },
-              // {
-              //   address: '',
-              //   amount: (listing.price_nanoton * 0.05).toFixed(0),
-              // }
+              {
+                address: '0:0000000000000000000000000000000000000000000000000000000000000000',
+                amount: (listing.price_nanoton * 0.05).toFixed(0),
+              }
             ]
           });
           
