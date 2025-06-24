@@ -84,6 +84,7 @@ export interface SetActiveCharacterResponse {
     income_rate: number;
     image_url: string;
   };
+  claimed_diamonds?: number;
   error?: string;
 }
 

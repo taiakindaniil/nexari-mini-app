@@ -144,6 +144,55 @@ export const GameProvider = ({ children }) => {
     }
   }, [api, fetchGameStatus]);
 
+  const setActiveCharacter = useCallback(async (userCharacterId) => {
+    if (!api) {
+      console.warn('API not available, skipping setActiveCharacter');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await api.character.setActiveCharacter(userCharacterId);
+      if (response.success) {
+        await fetchGameStatus(); // Refresh status to show new character and updated balance
+        
+        // Show notification if diamonds were automatically claimed
+        if (response.claimed_diamonds && response.claimed_diamonds > 0) {
+          const notification = document.createElement('div');
+          notification.textContent = `${response.claimed_diamonds} diamonds automatically saved when switching characters!`;
+          notification.style.cssText = `
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #4caf50;
+            color: #fff;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            z-index: 9999;
+            font-weight: 600;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+          `;
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            notification.remove();
+          }, 3000);
+        }
+        
+        return response;
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error('Failed to set active character:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [api, fetchGameStatus]);
+
   // Initialize game status on mount - only when api is available
   useEffect(() => {
     if (api) {
@@ -338,6 +387,7 @@ export const GameProvider = ({ children }) => {
     fetchGameStatus,
     startFarming,
     claimDiamonds,
+    setActiveCharacter,
   };
 
   return (
