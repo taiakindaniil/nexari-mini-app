@@ -82,7 +82,7 @@ const Market = () => {
             validUntil: Date.now() + 15 * 60 * 1000, // 15 minutes
             messages: [
               {
-                address: Address.parse(listing.wallet_address).toString(false, false),
+                address: Address.parse(listing.wallet_address).toString(true, false),
                 amount: (listing.price_nanoton * 0.95).toFixed(0),
                 payload: beginCell().storeUint(0, 32).storeStringTail(details.transaction_uuid).endCell().toBoc().toString('base64') // UUID for tracking
               },

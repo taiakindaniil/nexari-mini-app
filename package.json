@@ -12,9 +12,9 @@
   },
   "dependencies": {
     "@telegram-apps/sdk-react": "^3.3.1",
-    "@ton/core": "^0.61.0",
+    "@ton/core": "^0.56.3",
     "@tonconnect/ui": "^2.1.0",
-    "@tonconnect/ui-react": "^2.1.0",
+    "@tonconnect/ui-react": "^2.2.0-beta.0",
     "axios": "^1.10.0",
     "cross-env": "^7.0.3",
     "react": "^19.1.0",
