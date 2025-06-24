@@ -60,6 +60,8 @@ const Market = () => {
       alert('Please connect your TON wallet to purchase characters.');
       return;
     }
+
+    console.log(listing);
     
     setPurchasingListing(listing.id);
     
