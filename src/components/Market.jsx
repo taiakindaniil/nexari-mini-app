@@ -300,17 +300,16 @@ const Market = () => {
                   </div>
                   
                   <button 
-                    className="cancel-listing-button" 
+                    className={`cancel-listing-button ${cancellingListings.has(listing.id) ? 'loading' : ''}`}
                     onClick={() => handleCancelListing(listing)}
                     disabled={cancellingListings.has(listing.id)}
                   >
-                    {cancellingListings.has(listing.id) ? (
-                      <>
+                    <span className="button-text">Cancel Listing</span>
+                    {cancellingListings.has(listing.id) && (
+                      <div className="button-loading-overlay">
                         <div className="loading-spinner"></div>
-                        <span style={{ marginLeft: '8px', whiteSpace: 'nowrap' }}>Cancelling...</span>
-                      </>
-                    ) : (
-                      <span style={{ whiteSpace: 'nowrap' }}>Cancel Listing</span>
+                        <span>Cancelling...</span>
+                      </div>
                     )}
                   </button>
                 </div>
