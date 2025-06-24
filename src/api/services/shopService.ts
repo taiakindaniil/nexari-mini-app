@@ -261,14 +261,14 @@ class ShopService {
       return '#000000';  // Значение по умолчанию
     }
     const rarityMap: Record<string, string> = {
-      'common': '#000000',
-      'rare': '#000000',
-      'epic': '#000000',
-      'legendary': '#000000',
-      'premium': '#000000', 
-      'exclusive': '#000000'
+      'common': '#D3D3D3',      // Пастельно серый
+      'rare': '#B8E6B8',        // Светло-зеленый
+      'epic': '#D4A5A5',        // Нежно-розовый
+      'legendary': '#FFD700',   // Золотистый
+      'premium': '#E6B3CC',     // Пастельно-фиолетовый
+      'exclusive': '#FFB347'    // Пастельно-оранжевый
     };
-    return rarityMap[rarity] || '#000000';
+    return rarityMap[rarity] || '#D3D3D3';
   }
 
   /**

@@ -445,7 +445,7 @@ export default function Shop() {
           type: 'diamonds',
           name: 'Diamonds',
           src: 'https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp',
-          background: '#4CAF50',
+          background: '#87CEEB',
           value: randomReward.reward_diamonds
         };
       } else {
@@ -477,7 +477,7 @@ export default function Shop() {
           type: 'diamonds',
           name: 'Diamonds',
           src: 'https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp',
-          background: '#4CAF50',
+          background: '#87CEEB',
           value: Math.floor(Math.random() * 1000) + 100
         };
       } else {
