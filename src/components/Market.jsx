@@ -75,6 +75,8 @@ const Market = () => {
 
         console.log(details);
         console.log(listing.wallet_address);
+
+        console.log(Address.parse(listing.wallet_address).toString(true, false))
         
         try {
           // Send TON transaction with UUID in payload for monitoring
