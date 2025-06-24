@@ -91,12 +91,15 @@ const Market = () => {
                 amount: (listing.price_nanoton * 0.05).toFixed(0),
               }
             ]
+          }, {
+            onSuccess: () => {
+              setHiddenListings(prev => new Set([...prev, listing.id]));
+            },
+            onError: (error) => {
+              console.error('TON transaction error:', error);
+              alert('Failed to send TON transaction. Please try again.');
+            }
           });
-          
-          alert(`Transaction sent successfully!`);
-          
-          // Hide the listing locally without refreshing all listings
-          setHiddenListings(prev => new Set([...prev, listing.id]));
           
         } catch (tonError) {
           console.error('TON transaction error:', tonError);
