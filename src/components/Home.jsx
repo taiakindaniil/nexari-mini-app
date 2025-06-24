@@ -8,7 +8,8 @@ export default function Home() {
     loading, 
     error, 
     startFarming, 
-    claimDiamonds 
+    claimDiamonds,
+    fetchGameStatus 
   } = useGame();
   
   const [characterScale, setCharacterScale] = useState(1);
@@ -80,7 +81,30 @@ export default function Home() {
         console.log(`Claimed ${result.claimed_diamonds} diamonds!`);
       }
     } catch (error) {
-      alert(`Failed to claim diamonds: ${error.message}`);
+      console.error('Claim diamonds error:', error);
+      
+      // More user-friendly error messages
+      let errorMessage = error.message;
+      
+      if (error.message.includes('Suspicious activity detected')) {
+        errorMessage = 'Please wait a moment before trying again. The system detected unusual activity.';
+      } else if (error.message.includes('farming not started')) {
+        errorMessage = 'Farming has been started. Please wait a moment and try again.';
+      } else if (error.message.includes('income rate is 0')) {
+        errorMessage = 'Please select a character to start earning diamonds.';
+      } else if (error.message.includes('farming time:')) {
+        errorMessage = 'Not enough time has passed since farming started. Please wait a bit longer.';
+      } else if (error.message.includes('Farming started')) {
+        errorMessage = 'Farming has been started! Please wait a moment and try again.';
+        // Auto-refresh status after starting farming
+        setTimeout(() => {
+          fetchGameStatus();
+        }, 2000);
+      } else if (error.message.includes('wait at least 1 minute')) {
+        errorMessage = 'Please wait at least 1 minute before claiming diamonds.';
+      }
+      
+      alert(`Failed to claim diamonds: ${errorMessage}`);
     } finally {
       setClaimLoading(false);
     }
