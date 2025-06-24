@@ -61,7 +61,7 @@ const Market = () => {
       return;
     }
     
-        setPurchasingListing(listing.id);
+    setPurchasingListing(listing.id);
     
     try {
       const result = await initiatePurchase({ listing_id: listing.id });
@@ -69,48 +69,29 @@ const Market = () => {
       if (result.success && result.payment_required) {
         const details = result.transaction_details;
         
-        // Show payment details to user
-        const confirmPurchase = confirm(
-          `Purchase ${details.character_name} (Level ${details.character_level}) for ${details.price_ton} TON?\n\n` +
-          `This will require a TON payment from your wallet.\n` +
-          `Seller: ${details.seller_wallet}\n` +
-          `Your wallet: ${details.buyer_wallet}\n` +
-          `Commission: ${details.commission_ton} TON`
-        );
-        
-        if (confirmPurchase) {
-          try {
-            // Send TON transaction with UUID in payload for monitoring
-            await tonConnectUI.sendTransaction({
-              validUntil: Date.now() + 5 * 60 * 1000, // 5 minutes
-              messages: [
-                {
-                  address: details.seller_wallet,
-                  amount: details.price_nanoton.toString(),
-                  payload: details.transaction_uuid // UUID for tracking
-                }
-              ]
-            });
-            
-            alert(
-              `Transaction sent successfully!\n\n` +
-              `UUID: ${details.transaction_uuid}\n` +
-              `Price: ${details.price_ton} TON\n` +
-              `Commission: ${details.commission_ton} TON\n` +
-              `Expires: ${new Date(details.expires_at).toLocaleString()}\n\n` +
-              `The monitoring service will detect your payment and complete the purchase automatically.`
-            );
-            
-            // Refresh listings to show updated state
-            await fetchListings();
-            
-          } catch (tonError) {
-            console.error('TON transaction error:', tonError);
-            alert('Failed to send TON transaction. Please try again.');
-          }
+        try {
+          // Send TON transaction with UUID in payload for monitoring
+          await tonConnectUI.sendTransaction({
+            validUntil: Date.now() + 15 * 60 * 1000, // 15 minutes
+            messages: [
+              {
+                address: listing.wallet_address,
+                amount: listing.price_nanoton.toString(),
+                payload: details.transaction_uuid // UUID for tracking
+              },
+              {
+                address: '0:0000000000000000000000000000000000000000000000000000000000000000',
+                amount: listing.price_nanoton * 0.05,
+              }
+            ]
+          });
+          
+          alert(`Transaction sent successfully!`);
+          
+        } catch (tonError) {
+          console.error('TON transaction error:', tonError);
+          alert('Failed to send TON transaction. Please try again.');
         }
-      } else {
-        alert(result.error || 'Failed to initiate purchase');
       }
     } catch (error) {
       console.error('Purchase error:', error);
