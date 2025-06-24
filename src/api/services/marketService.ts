@@ -46,19 +46,23 @@ export interface PurchaseResponse {
   error?: string;
   payment_required?: boolean;
   transaction_details?: {
+    transaction_uuid: string;
     listing_id: number;
     character_name: string;
     character_level: number;
     price_nanoton: number;
     price_ton: number;
+    commission_nanoton: number;
+    commission_ton: number;
     seller_wallet: string;
     buyer_wallet: string;
+    expires_at: string;
   };
 }
 
 export interface CompletePurchaseRequest {
-  listing_id: number;
-  transaction_hash: string;
+  transaction_uuid: string;
+  blockchain_hash: string;
 }
 
 export interface CompletePurchaseResponse {
@@ -66,13 +70,15 @@ export interface CompletePurchaseResponse {
   error?: string;
   transaction?: {
     id: number;
+    uuid: string;
     character_name: string;
     character_level: number;
     price_nanoton: number;
     price_ton: number;
     commission_nanoton: number;
     commission_ton: number;
-    transaction_hash: string;
+    blockchain_hash: string;
+    confirmed_at: string;
   };
 }
 

@@ -3,6 +3,7 @@ import { useShop } from '../api/hooks/useShop.ts';
 import { useMarket } from '../api/hooks/useMarket.ts';
 import { useTonConnect } from '../hooks/useTonConnect.ts';
 import shopService from '../api/services/shopService.ts';
+import { useTonConnectUI } from '@tonconnect/ui-react';
 
 const Market = () => {
   const { fetchInventory } = useShop();
@@ -13,7 +14,6 @@ const Market = () => {
     error,
     fetchListings,
     initiatePurchase,
-    completePurchase,
     cancelListing,
     fetchMyListings,
     fetchStats,
@@ -22,6 +22,8 @@ const Market = () => {
   } = useMarket();
 
   const { wallet } = useTonConnect();
+
+  const [tonConnectUI] = useTonConnectUI();
 
   const [activeTab, setActiveTab] = useState('browse'); // browse, my-listings
   const [characterFilter, setCharacterFilter] = useState('');
@@ -58,8 +60,8 @@ const Market = () => {
       alert('Please connect your TON wallet to purchase characters.');
       return;
     }
-
-    setPurchasingListing(listing.id);
+    
+        setPurchasingListing(listing.id);
     
     try {
       const result = await initiatePurchase({ listing_id: listing.id });
@@ -72,28 +74,39 @@ const Market = () => {
           `Purchase ${details.character_name} (Level ${details.character_level}) for ${details.price_ton} TON?\n\n` +
           `This will require a TON payment from your wallet.\n` +
           `Seller: ${details.seller_wallet}\n` +
-          `Your wallet: ${details.buyer_wallet}`
+          `Your wallet: ${details.buyer_wallet}\n` +
+          `Commission: ${details.commission_ton} TON`
         );
         
         if (confirmPurchase) {
-          // Here you would integrate with TON Connect to send the payment
-          // For now, we'll simulate a successful transaction
-          alert('TON payment integration needed here. This would open your wallet to send the payment.');
-          
-          // Simulate transaction hash (in real implementation, this comes from TON blockchain)
-          const mockTransactionHash = 'mock_tx_' + Date.now();
-          
-          // Complete the purchase
-          const completeResult = await completePurchase({
-            listing_id: listing.id,
-            transaction_hash: mockTransactionHash
-          });
-          
-          if (completeResult.success) {
-            await fetchInventory(); // Refresh inventory
-            alert(`Successfully purchased ${details.character_name} for ${details.price_ton} TON!`);
-          } else {
-            alert(completeResult.error || 'Failed to complete purchase');
+          try {
+            // Send TON transaction with UUID in payload for monitoring
+            await tonConnectUI.sendTransaction({
+              validUntil: Date.now() + 5 * 60 * 1000, // 5 minutes
+              messages: [
+                {
+                  address: details.seller_wallet,
+                  amount: details.price_nanoton.toString(),
+                  payload: details.transaction_uuid // UUID for tracking
+                }
+              ]
+            });
+            
+            alert(
+              `Transaction sent successfully!\n\n` +
+              `UUID: ${details.transaction_uuid}\n` +
+              `Price: ${details.price_ton} TON\n` +
+              `Commission: ${details.commission_ton} TON\n` +
+              `Expires: ${new Date(details.expires_at).toLocaleString()}\n\n` +
+              `The monitoring service will detect your payment and complete the purchase automatically.`
+            );
+            
+            // Refresh listings to show updated state
+            await fetchListings();
+            
+          } catch (tonError) {
+            console.error('TON transaction error:', tonError);
+            alert('Failed to send TON transaction. Please try again.');
           }
         }
       } else {
