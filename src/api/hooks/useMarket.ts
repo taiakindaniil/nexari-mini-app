@@ -59,7 +59,6 @@ export const useMarket = () => {
 
   const initiatePurchase = useCallback(async (request: PurchaseRequest) => {
     try {
-      setLoading(true);
       clearError();
       const result = await marketService.purchaseFromMarket(request);
       
@@ -69,8 +68,6 @@ export const useMarket = () => {
       setError(errorMessage);
       console.error('Error initiating purchase:', err);
       return { success: false, error: errorMessage };
-    } finally {
-      setLoading(false);
     }
   }, [clearError]);
 

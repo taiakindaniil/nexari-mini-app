@@ -274,10 +274,10 @@ const Market = () => {
                   <button 
                     className="market-buy-button" 
                     onClick={() => handlePurchase(listing)}
-                    disabled={loading || !isWalletConnected || purchasingListing === listing.id}
+                    disabled={!isWalletConnected || purchasingListing === listing.id}
                   >
                     {purchasingListing === listing.id ? (
-                      <span>Processing...</span>
+                      <span>Sending...</span>
                     ) : (
                       <>
                         <span>{formatTon(listing.price_nanoton)} TON</span>
