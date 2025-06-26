@@ -110,6 +110,29 @@ export interface MarketFilters {
   offset?: number;
 }
 
+export interface TransactionStatusResponse {
+  success: boolean;
+  error?: string;
+  transaction?: {
+    uuid: string;
+    status: string;
+    listing_id: number;
+    expires_at: string;
+    time_remaining_seconds: number;
+    character_name: string;
+    price_ton: number;
+    blockchain_hash?: string;
+    confirmed_at?: string;
+  };
+}
+
+export interface CleanupResponse {
+  success: boolean;
+  error?: string;
+  expired_count: number;
+  message?: string;
+}
+
 /**
  * Service for handling market-related API calls
  */
@@ -217,6 +240,25 @@ class MarketService {
    */
   formatTon(nanoTon: number, decimals: number = 3): string {
     return this.nanoTonToTon(nanoTon).toFixed(decimals);
+  }
+
+  /**
+   * Get transaction status
+   * @param transactionUuid - Transaction UUID
+   * @returns Promise with transaction status
+   */
+  async getTransactionStatus(transactionUuid: string): Promise<TransactionStatusResponse> {
+    const { data } = await apiClient.get<TransactionStatusResponse>(`/market/transactions/${transactionUuid}/status`);
+    return data;
+  }
+
+  /**
+   * Cleanup expired transactions (admin endpoint)
+   * @returns Promise with cleanup result
+   */
+  async cleanupExpiredTransactions(): Promise<CleanupResponse> {
+    const { data } = await apiClient.post<CleanupResponse>('/market/transactions/cleanup');
+    return data;
   }
 }
 

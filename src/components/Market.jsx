@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useShop } from '../api/hooks/useShop.ts';
 import { useMarket } from '../api/hooks/useMarket.ts';
 import { useTonConnect } from '../hooks/useTonConnect.ts';
@@ -38,6 +38,13 @@ const Market = () => {
   // Check if wallet is connected
   const isWalletConnected = !!wallet?.account?.address;
 
+  // Debug logging
+  console.log('Market component render:', {
+    hiddenListings: Array.from(hiddenListings),
+    listingsCount: listings.length,
+    purchasingListing
+  });
+
   // Fetch data on component mount
   useEffect(() => {
     fetchListings();
@@ -54,8 +61,20 @@ const Market = () => {
       max_price_nanoton: maxPrice ? parseFloat(maxPrice) * 1_000_000_000 : undefined, // Convert TON to nanoTON
       sort_by: sortBy
     };
+    console.log('Applying filters, current hiddenListings:', Array.from(hiddenListings));
     fetchListings(filters);
-  }, [characterFilter, minPrice, maxPrice, sortBy]);
+  }, [characterFilter, minPrice, maxPrice, sortBy, fetchListings]);
+
+  // Memoize filtered listings to preserve hiddenListings filter
+  const visibleListings = useMemo(() => {
+    const filtered = listings.filter(listing => {
+      const isHidden = hiddenListings.has(listing.id);
+      console.log(`Listing ${listing.id} (${listing.character.name}): hidden=${isHidden}`);
+      return !isHidden;
+    });
+    console.log('Visible listings count:', filtered.length, 'out of', listings.length);
+    return filtered;
+  }, [listings, hiddenListings]);
 
   const handlePurchase = async (listing) => {
     if (!isWalletConnected) {
@@ -74,7 +93,23 @@ const Market = () => {
         const details = result.transaction_details;
 
         console.log(details);
-        console.log(listing.wallet_address);
+        
+        // Show success message with expiration time
+        const expiresAt = new Date(details.expires_at);
+        const timeRemaining = Math.round((expiresAt - new Date()) / 1000 / 60); // minutes
+        
+        const confirmPurchase = window.confirm(
+          `Purchase initiated successfully!\n\n` +
+          `Character: ${details.character_name} (Level ${details.character_level})\n` +
+          `Price: ${details.price_ton} TON\n` +
+          `Time remaining: ${timeRemaining} minutes\n\n` +
+          `Click OK to send TON payment now.`
+        );
+        
+        if (!confirmPurchase) {
+          setPurchasingListing(null);
+          return;
+        }
         
         try {
           // Send TON transaction with UUID in payload for monitoring
@@ -93,25 +128,46 @@ const Market = () => {
             ]
           }, {
             onSuccess: () => {
-              setHiddenListings(prev => new Set([...prev, listing.id]));
+              console.log('Transaction successful, hiding listing:', listing.id);
+              setHiddenListings(prev => {
+                const newHidden = new Set([...prev, listing.id]);
+                console.log('Updated hiddenListings:', newHidden);
+                return newHidden;
+              });
+              
+              alert(`Payment sent successfully!\n\nTransaction UUID: ${details.transaction_uuid}\n\nYour purchase will be completed automatically when the payment is confirmed on the blockchain. This usually takes 1-2 minutes.`);
             },
             onError: (error) => {
               console.error('TON transaction error:', error);
-              alert('Failed to send TON transaction. Please try again.');
+              alert('Failed to send TON payment. The transaction reservation will expire in 15 minutes if not completed.');
             }
           });
           
         } catch (tonError) {
           console.error('TON transaction error:', tonError);
-          alert('Failed to send TON transaction. Please try again.');
+          alert('Failed to send TON transaction. The transaction reservation will expire in 15 minutes if not completed.');
         }
       } else {
-        // Handle server errors (e.g., "Cannot buy your own listing")
-        alert(result.error || 'Failed to initiate purchase');
+        // Handle server errors with better messages for race conditions
+        if (result.error && result.error.includes('currently being purchased')) {
+          alert('⏳ This item is currently being purchased by another user.\n\nPlease try again in a few minutes or choose a different character.');
+        } else if (result.error && result.error.includes('just purchased')) {
+          alert('😔 Someone just purchased this item before you.\n\nPlease refresh the market and try a different character.');
+          // Auto-refresh listings after race condition
+          setTimeout(() => {
+            fetchListings();
+          }, 1000);
+        } else {
+          alert(result.error || 'Failed to initiate purchase');
+        }
       }
     } catch (error) {
       console.error('Purchase error:', error);
-      alert('Failed to purchase. Please try again.');
+      if (error.message && error.message.includes('500')) {
+        alert('Server error occurred. Please try again in a moment.');
+      } else {
+        alert('Failed to purchase. Please try again.');
+      }
     } finally {
       setPurchasingListing(null);
     }
@@ -252,13 +308,13 @@ const Market = () => {
                 <div className="loading-spinner"></div>
                 <div>Loading market...</div>
               </div>
-            ) : listings.length === 0 ? (
+            ) : visibleListings.length === 0 ? (
               <div className="empty-market">
                 <p>No items in the market</p>
                 <p>Be the first to sell something!</p>
               </div>
             ) : (
-              listings.filter(listing => !hiddenListings.has(listing.id)).map(listing => (
+              visibleListings.map(listing => (
                 <div 
                   key={listing.id} 
                   className={`case-container ${shopService.getRarityClass(listing.character.rarity)}`}
