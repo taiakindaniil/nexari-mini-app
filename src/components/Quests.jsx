@@ -8,6 +8,7 @@ export default function Quests() {
   const [quests, setQuests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [claimingQuests, setClaimingQuests] = useState(new Set());
 
   const handleTabSwitch = (tab) => {
     setActiveTab(tab);
@@ -52,7 +53,9 @@ export default function Quests() {
   };
 
   const handleClaimReward = async (quest) => {
-    if (quest.status !== 'completed') return;
+    if (quest.status !== 'completed' || claimingQuests.has(quest.id)) return;
+    
+    setClaimingQuests(prev => new Set(prev).add(quest.id));
     
     try {
       const response = await questService.claimReward(quest.id);
@@ -62,6 +65,12 @@ export default function Quests() {
     } catch (err) {
       console.error('Error claiming reward:', err);
       showNotification('Ошибка при получении награды');
+    } finally {
+      setClaimingQuests(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(quest.id);
+        return newSet;
+      });
     }
   };
 
@@ -190,13 +199,18 @@ export default function Quests() {
                             ? 'ready' 
                             : 'locked'
                       }`}
-                      disabled={quest.status !== 'completed'}
+                      disabled={quest.status !== 'completed' || claimingQuests.has(quest.id)}
                       onClick={() => handleClaimReward(quest)}
                     >
                       {quest.status === 'claimed' ? (
                         <>
                           <span className="button-icon">✓</span>
                           Claimed
+                        </>
+                      ) : claimingQuests.has(quest.id) ? (
+                        <>
+                          <span className="button-icon">⏳</span>
+                          Claiming...
                         </>
                       ) : (
                         <>

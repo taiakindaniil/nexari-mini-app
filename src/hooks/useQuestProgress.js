@@ -12,13 +12,6 @@ export const useQuestProgress = () => {
     }
   }, [playerData?.totalClicks]);
 
-  // Track progress for stars quest
-  useEffect(() => {
-    if (playerData?.stars > 0) {
-      questService.updateProgress('stars', playerData.stars).catch(console.error);
-    }
-  }, [playerData?.stars]);
-
   // Track progress for diamonds quest
   useEffect(() => {
     if (coins > 0) {
