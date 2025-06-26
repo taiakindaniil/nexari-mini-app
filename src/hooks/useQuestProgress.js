@@ -8,21 +8,27 @@ export const useQuestProgress = () => {
   // Track progress for clicks quest
   useEffect(() => {
     if (playerData?.totalClicks > 0) {
-      questService.updateProgress('clicks', playerData.totalClicks).catch(console.error);
+      questService.updateProgress('clicks', playerData.totalClicks).catch(err => {
+        console.warn('Failed to update clicks progress:', err);
+      });
     }
   }, [playerData?.totalClicks]);
 
   // Track progress for diamonds quest
   useEffect(() => {
     if (coins > 0) {
-      questService.updateProgress('diamonds', coins).catch(console.error);
+      questService.updateProgress('diamonds', coins).catch(err => {
+        console.warn('Failed to update diamonds progress:', err);
+      });
     }
   }, [coins]);
 
   // Track progress for leaderboard quest (rank)
   useEffect(() => {
     if (playerData?.rank && playerData.rank <= 10) {
-      questService.updateProgress('leaderboard', playerData.rank).catch(console.error);
+      questService.updateProgress('leaderboard', playerData.rank).catch(err => {
+        console.warn('Failed to update leaderboard progress:', err);
+      });
     }
   }, [playerData?.rank]);
 };
