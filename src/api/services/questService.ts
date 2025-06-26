@@ -70,6 +70,14 @@ class QuestService {
     });
     return response.data;
   }
+
+  /**
+   * Sync quest progress with game data
+   */
+  async syncProgress(): Promise<{ success: boolean; message: string }> {
+    const response = await apiClient.post(`${this.basePath}/sync-progress`);
+    return response.data;
+  }
 }
 
 const questService = new QuestService();

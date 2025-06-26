@@ -5,25 +5,23 @@ import { questService } from '../api';
 export const useQuestProgress = () => {
   const { playerData, coins } = useGame();
 
-  // Track progress for clicks quest
+  // Sync quest progress when game data changes
   useEffect(() => {
-    if (playerData?.totalClicks > 0) {
-      questService.updateProgress('clicks', playerData.totalClicks).catch(err => {
-        console.warn('Failed to update clicks progress:', err);
-      });
-    }
-  }, [playerData?.totalClicks]);
+    const syncProgress = async () => {
+      try {
+        await questService.syncProgress();
+      } catch (err) {
+        console.warn('Failed to sync quest progress:', err);
+      }
+    };
 
-  // Track progress for diamonds quest
-  useEffect(() => {
-    if (coins > 0) {
-      questService.updateProgress('diamonds', coins).catch(err => {
-        console.warn('Failed to update diamonds progress:', err);
-      });
+    // Only sync if we have meaningful data
+    if (playerData?.totalClicks > 0 || coins > 0) {
+      syncProgress();
     }
-  }, [coins]);
+  }, [playerData?.totalClicks, coins]);
 
-  // Track progress for leaderboard quest (rank)
+  // Track progress for leaderboard quest (rank) - manual update since it's not in game session
   useEffect(() => {
     if (playerData?.rank && playerData.rank <= 10) {
       questService.updateProgress('leaderboard', playerData.rank).catch(err => {
