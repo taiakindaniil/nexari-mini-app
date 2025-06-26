@@ -6,7 +6,7 @@ import { useGame } from '../context/GameContext';
  * Updates the quests state directly based on game data changes
  */
 export const useQuestProgressUpdater = (quests, setQuests) => {
-  const { playerData, coins } = useGame();
+  const { gameStatus } = useGame();
 
   useEffect(() => {
     if (!quests || quests.length === 0) return;
@@ -23,10 +23,10 @@ export const useQuestProgressUpdater = (quests, setQuests) => {
         let newStatus = quest.status;
 
         // Update progress based on quest type
-        if (quest.quest_type === 'clicks' && playerData?.totalClicks) {
-          currentProgress = Math.max(currentProgress, playerData.totalClicks);
-        } else if (quest.quest_type === 'diamonds' && coins) {
-          currentProgress = Math.max(currentProgress, coins);
+        if (quest.quest_type === 'clicks' && gameStatus?.total_clicks) {
+          currentProgress = Math.max(currentProgress, gameStatus.total_clicks);
+        } else if (quest.quest_type === 'diamonds' && gameStatus?.total_diamonds_earned) {
+          currentProgress = Math.max(currentProgress, gameStatus.total_diamonds_earned);
         }
 
         // Update status based on progress
@@ -53,7 +53,7 @@ export const useQuestProgressUpdater = (quests, setQuests) => {
         return quest;
       })
     );
-  }, [playerData?.totalClicks, coins, quests, setQuests]);
+  }, [gameStatus?.total_clicks, gameStatus?.total_diamonds_earned, quests, setQuests]);
 };
 
 export default useQuestProgressUpdater; 

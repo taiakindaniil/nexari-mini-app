@@ -3,7 +3,7 @@ import { useGame } from '../context/GameContext';
 import { questService } from '../api';
 
 export const useQuestProgress = () => {
-  const { playerData, coins } = useGame();
+  const { gameStatus, player } = useGame();
 
   // Sync quest progress when game data changes
   useEffect(() => {
@@ -16,19 +16,19 @@ export const useQuestProgress = () => {
     };
 
     // Only sync if we have meaningful data
-    if (playerData?.totalClicks > 0 || coins > 0) {
+    if (gameStatus?.total_clicks > 0 || gameStatus?.total_diamonds_earned > 0) {
       syncProgress();
     }
-  }, [playerData?.totalClicks, coins]);
+  }, [gameStatus?.total_clicks, gameStatus?.total_diamonds_earned]);
 
   // Track progress for leaderboard quest (rank) - manual update since it's not in game session
   useEffect(() => {
-    if (playerData?.rank && playerData.rank <= 10) {
-      questService.updateProgress('leaderboard', playerData.rank).catch(err => {
+    if (player?.rank && player.rank <= 10) {
+      questService.updateProgress('leaderboard', player.rank).catch(err => {
         console.warn('Failed to update leaderboard progress:', err);
       });
     }
-  }, [playerData?.rank]);
+  }, [player?.rank]);
 };
 
 export default useQuestProgress; 
