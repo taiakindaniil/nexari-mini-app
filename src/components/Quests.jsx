@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../context/GameContext';
 import { questService } from '../api';
+import { useQuestProgressUpdater } from '../hooks/useQuestProgressUpdater';
 
 export default function Quests() {
   const { addCoins, player } = useGame();
@@ -9,6 +10,9 @@ export default function Quests() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [claimingQuests, setClaimingQuests] = useState(new Set());
+
+  // Use the quest progress updater hook
+  useQuestProgressUpdater(quests, setQuests);
 
   const handleTabSwitch = (tab) => {
     setActiveTab(tab);
@@ -33,9 +37,9 @@ export default function Quests() {
     loadQuests();
   }, []);
 
-  // Refresh quests when active tab is quests
+  // Optional: Refresh quests when switching to quests tab (only if quests array is empty)
   useEffect(() => {
-    if (activeTab === 'quests') {
+    if (activeTab === 'quests' && quests.length === 0 && !loading) {
       loadQuests();
     }
   }, [activeTab]);
@@ -45,7 +49,21 @@ export default function Quests() {
     
     try {
       await questService.verifyTelegramQuest();
-      loadQuests(); // Refresh quests
+      
+      // Update only the telegram quest instead of reloading all
+      setQuests(prevQuests => 
+        prevQuests.map(q => 
+          q.quest_type === 'telegram' 
+            ? { 
+                ...q, 
+                status: 'completed', 
+                progress_value: 1,
+                completed_at: new Date().toISOString() 
+              }
+            : q
+        )
+      );
+      
       showNotification('Telegram quest verified!');
     } catch (err) {
       console.error('Error verifying telegram quest:', err);
@@ -60,7 +78,16 @@ export default function Quests() {
     try {
       const response = await questService.claimReward(quest.id);
       addCoins(response.reward_amount);
-      loadQuests(); // Refresh quests
+      
+      // Update only the specific quest instead of reloading all
+      setQuests(prevQuests => 
+        prevQuests.map(q => 
+          q.id === quest.id 
+            ? { ...q, status: 'claimed', claimed_at: new Date().toISOString() }
+            : q
+        )
+      );
+      
       showNotification('Награда получена!');
     } catch (err) {
       console.error('Error claiming reward:', err);
