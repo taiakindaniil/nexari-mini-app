@@ -1,94 +1,68 @@
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../context/GameContext';
+import { questService } from '../api';
 
 export default function Quests() {
-  const { coins, addCoins, playerData, player } = useGame();
+  const { addCoins, player } = useGame();
   const [activeTab, setActiveTab] = useState('quests'); // 'quests' or 'friends'
-  const [questsCompleted, setQuestsCompleted] = useState({
-    telegram: false,
-    clicks: false,
-    stars: false,
-    leaderboard: false,
-    diamonds: false
-  });
-  const [questsClaimed, setQuestsClaimed] = useState({
-    telegram: false,
-    clicks: false,
-    stars: false,
-    leaderboard: false,
-    diamonds: false
-  });
+  const [quests, setQuests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const handleTabSwitch = (tab) => {
     setActiveTab(tab);
   };
 
-  const quests = [
-    {
-      id: 'telegram',
-      icon: 'https://em-content.zobj.net/source/telegram/386/memo_1f4dd.webp',
-      title: 'Subscribe to our Telegram',
-      description: 'Join our community channel',
-      reward: 50,
-      link: 'https://t.me/nexari_community',
-      condition: () => questsCompleted.telegram
-    },
-    {
-      id: 'clicks',
-      icon: 'https://em-content.zobj.net/source/telegram/386/video-game_1f3ae.webp',
-      title: 'Click the controller 50 times',
-      description: 'Make 50 clicks on the character',
-      reward: 150,
-      condition: () => playerData.totalClicks >= 50
-    },
-    {
-      id: 'stars',
-      icon: 'https://em-content.zobj.net/source/telegram/386/star_2b50.webp',
-      title: 'Earn 100 Stars',
-      description: 'Collect 100 stars in total',
-      reward: 200,
-      condition: () => playerData.stars >= 100
-    },
-    {
-      id: 'leaderboard',
-      icon: 'https://em-content.zobj.net/source/telegram/386/trophy_1f3c6.webp',
-      title: 'Reach Top 10 in Leaderboard',
-      description: 'Get into top 10 players',
-      reward: 500,
-      condition: () => playerData.rank <= 10
-    },
-    {
-      id: 'diamonds',
-      icon: 'https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp',
-      title: 'Collect 3000 Diamonds',
-      description: 'Accumulate 3000 diamonds',
-      reward: 100,
-      condition: () => coins >= 3000
+  // Load quests from API
+  const loadQuests = async () => {
+    try {
+      setLoading(true);
+      const response = await questService.getQuests();
+      setQuests(response.quests);
+      setError(null);
+    } catch (err) {
+      console.error('Error loading quests:', err);
+      setError('Failed to load quests');
+    } finally {
+      setLoading(false);
     }
-  ];
-
-  useEffect(() => {
-    // Check quest completion status
-    const newCompleted = {};
-    quests.forEach(quest => {
-      newCompleted[quest.id] = quest.condition();
-    });
-    setQuestsCompleted(newCompleted);
-  }, [coins, playerData]);
-
-  const handleTelegramClick = () => {
-    window.open('https://t.me/nexari_community', '_blank');
-    setQuestsCompleted(prev => ({ ...prev, telegram: true }));
   };
 
-  const handleClaimReward = (questId, reward) => {
-    if (questsClaimed[questId] || !questsCompleted[questId]) return;
+  useEffect(() => {
+    loadQuests();
+  }, []);
+
+  // Refresh quests when active tab is quests
+  useEffect(() => {
+    if (activeTab === 'quests') {
+      loadQuests();
+    }
+  }, [activeTab]);
+
+  const handleTelegramClick = async (quest) => {
+    window.open(quest.link_url || 'https://t.me/nexari_community', '_blank');
     
-    addCoins(reward);
-    setQuestsClaimed(prev => ({ ...prev, [questId]: true }));
+    try {
+      await questService.verifyTelegramQuest();
+      loadQuests(); // Refresh quests
+      showNotification('Telegram quest verified!');
+    } catch (err) {
+      console.error('Error verifying telegram quest:', err);
+    }
+  };
+
+  const handleClaimReward = async (quest) => {
+    if (quest.status !== 'completed') return;
     
-    // Show notification
-    showNotification('Награда получена!');
+    try {
+      const response = await questService.claimReward(quest.id);
+      addCoins(response.reward_amount);
+      loadQuests(); // Refresh quests
+      showNotification('Награда получена!');
+    } catch (err) {
+      console.error('Error claiming reward:', err);
+      showNotification('Ошибка при получении награды');
+    }
   };
 
   const showNotification = (message) => {
@@ -145,56 +119,97 @@ export default function Quests() {
       {/* Quests Content */}
       {activeTab === 'quests' && (
         <div className="cases-content">
-          <div className="cases-grid">
-            {quests.map((quest) => (
-              <div key={quest.id} className="case-container">
-                <img className="case-image" src={quest.icon} alt={quest.title} />
-                <div className="case-name">
-                  {quest.id === 'telegram' ? (
-                    <>
-                      Subscribe to our{' '}
-                      <a 
-                        href={quest.link}
-                        onClick={handleTelegramClick}
-                        style={{ color: '#4fc3f7', textDecoration: 'none' }}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Telegram
-                      </a>
-                    </>
-                  ) : (
-                    quest.title
-                  )}
-                </div>
-                <div className="case-price">
-                  <button 
-                    className={`quest-claim-button ${
-                      questsClaimed[quest.id] 
-                        ? 'claimed' 
-                        : questsCompleted[quest.id] 
-                          ? 'ready' 
-                          : 'locked'
-                    }`}
-                    disabled={!questsCompleted[quest.id] || questsClaimed[quest.id]}
-                    onClick={() => handleClaimReward(quest.id, quest.reward)}
-                  >
-                    {questsClaimed[quest.id] ? (
+          {loading ? (
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              minHeight: '300px',
+              fontSize: '1.2rem',
+              color: '#888'
+            }}>
+              Loading quests...
+            </div>
+          ) : error ? (
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              minHeight: '300px',
+              fontSize: '1.2rem',
+              color: '#ff6b6b'
+            }}>
+              {error}
+            </div>
+          ) : (
+            <div className="cases-grid">
+              {quests.map((quest) => (
+                <div key={quest.id} className="case-container">
+                  <img 
+                    className="case-image" 
+                    src={quest.icon_url || 'https://em-content.zobj.net/source/telegram/386/gem-stone_1f48e.webp'} 
+                    alt={quest.title} 
+                  />
+                  <div className="case-name">
+                    {quest.quest_type === 'telegram' ? (
                       <>
-                        <span className="button-icon">✓</span>
-                        Claimed
+                        <a 
+                          href={quest.link_url}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleTelegramClick(quest);
+                          }}
+                          style={{ color: '#4fc3f7', textDecoration: 'none', cursor: 'pointer' }}
+                        >
+                          {quest.title}
+                        </a>
                       </>
                     ) : (
-                      <>
-                        <span className="button-icon">💎</span>
-                        Claim {quest.reward}
-                      </>
+                      quest.title
                     )}
-                  </button>
+                  </div>
+                  <div className="case-description" style={{ 
+                    fontSize: '0.8rem', 
+                    color: '#888', 
+                    marginBottom: '0.5rem',
+                    textAlign: 'center'
+                  }}>
+                    {quest.description}
+                    {quest.target_value && (
+                      <div style={{ marginTop: '0.25rem', color: '#4fc3f7' }}>
+                        Progress: {quest.progress_value}/{quest.target_value}
+                      </div>
+                    )}
+                  </div>
+                  <div className="case-price">
+                    <button 
+                      className={`quest-claim-button ${
+                        quest.status === 'claimed' 
+                          ? 'claimed' 
+                          : quest.status === 'completed' 
+                            ? 'ready' 
+                            : 'locked'
+                      }`}
+                      disabled={quest.status !== 'completed'}
+                      onClick={() => handleClaimReward(quest)}
+                    >
+                      {quest.status === 'claimed' ? (
+                        <>
+                          <span className="button-icon">✓</span>
+                          Claimed
+                        </>
+                      ) : (
+                        <>
+                          <span className="button-icon">💎</span>
+                          Claim {quest.reward_amount}
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

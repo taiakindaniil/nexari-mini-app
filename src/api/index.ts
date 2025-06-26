@@ -11,6 +11,8 @@ import characterService from './services/characterService';
 import type { Character, UserCharacter, ShopCharactersResponse, InventoryResponse, PurchaseCharacterResponse, UpgradeCharacterResponse, SetActiveCharacterResponse, CharacterDetailsResponse } from './services/characterService';
 import shopService from './services/shopService';
 import type { CaseData, InventoryItem, CaseReward, PurchaseCaseRequest, PurchaseCaseResponse, CaseHistoryEntry, CaseDetails } from './services/shopService';
+import questService from './services/questService';
+import type { Quest, QuestListResponse, QuestClaimResponse, QuestProgressRequest } from './services/questService';
 
 // Export services
 export {
@@ -32,6 +34,9 @@ export {
   
   // Shop service
   shopService,
+  
+  // Quest service
+  questService,
   
   // Hooks
   useApi,
@@ -72,6 +77,12 @@ export type {
   PurchaseCaseResponse,
   CaseHistoryEntry,
   CaseDetails,
+  
+  // Quest types
+  Quest,
+  QuestListResponse,
+  QuestClaimResponse,
+  QuestProgressRequest,
 };
 
 // Create a single API object that contains all services
@@ -81,6 +92,7 @@ const api = {
   game: gameService,
   character: characterService,
   shop: shopService,
+  quest: questService,
   setInitData,
 };
 

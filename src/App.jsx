@@ -10,9 +10,13 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import TelegramSync from './components/TelegramSync';
 import { TonConnectUIProvider } from '@tonconnect/ui-react';
+import useQuestProgress from './hooks/useQuestProgress';
 
 function AppContent() {
   const { currentScreen, setCurrentScreen } = useGame();
+  
+  // Track quest progress automatically
+  useQuestProgress();
 
   const handleScreenChange = (screen) => {
     setCurrentScreen(screen);
