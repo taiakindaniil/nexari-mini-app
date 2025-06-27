@@ -13,13 +13,15 @@ const Market = () => {
     myListings,
     loading,
     error,
-    fetchListings,
+    fetchListingsEnhanced,
     initiatePurchase,
     cancelListing,
     fetchMyListings,
     fetchStats,
     clearError,
-    formatTon
+    formatTon,
+    markPurchaseInitiated,
+    cleanupExpiredPurchases
   } = useMarket();
 
   const { wallet } = useTonConnect();
@@ -33,21 +35,20 @@ const Market = () => {
   const [sortBy, setSortBy] = useState('newest');
   const [cancellingListings, setCancellingListings] = useState(new Set());
   const [purchasingListing, setPurchasingListing] = useState(null);
-  const [hiddenListings, setHiddenListings] = useState(new Set());
 
   // Check if wallet is connected
   const isWalletConnected = !!wallet?.account?.address;
 
   // Debug logging
   console.log('Market component render:', {
-    hiddenListings: Array.from(hiddenListings),
     listingsCount: listings.length,
     purchasingListing
   });
 
   // Fetch data on component mount
   useEffect(() => {
-    fetchListings();
+    cleanupExpiredPurchases(); // Clean up expired purchases on mount
+    fetchListingsEnhanced();
     fetchMyListings();
     fetchStats();
     fetchInventory();
@@ -56,25 +57,25 @@ const Market = () => {
   // Apply filters when they change
   useEffect(() => {
     const filters = {
-      character_filter: characterFilter || undefined,
-      min_price_nanoton: minPrice ? parseFloat(minPrice) * 1_000_000_000 : undefined, // Convert TON to nanoTON
-      max_price_nanoton: maxPrice ? parseFloat(maxPrice) * 1_000_000_000 : undefined, // Convert TON to nanoTON
+      character_name: characterFilter,
+      min_price: minPrice ? parseFloat(minPrice) : undefined,
+      max_price: maxPrice ? parseFloat(maxPrice) : undefined,
       sort_by: sortBy
     };
-    console.log('Applying filters, current hiddenListings:', Array.from(hiddenListings));
-    fetchListings(filters);
-  }, [characterFilter, minPrice, maxPrice, sortBy, fetchListings]);
+    console.log('Applying filters, current purchasingListing:', purchasingListing);
+    fetchListingsEnhanced(filters);
+  }, [characterFilter, minPrice, maxPrice, sortBy, fetchListingsEnhanced]);
 
-  // Memoize filtered listings to preserve hiddenListings filter
+  // Memoize filtered listings to preserve purchasingListing filter
   const visibleListings = useMemo(() => {
     const filtered = listings.filter(listing => {
-      const isHidden = hiddenListings.has(listing.id);
-      console.log(`Listing ${listing.id} (${listing.character.name}): hidden=${isHidden}`);
-      return !isHidden;
+      const isPurchasing = purchasingListing === listing.id;
+      console.log(`Listing ${listing.id} (${listing.character.name}): purchasing=${isPurchasing}`);
+      return !isPurchasing;
     });
     console.log('Visible listings count:', filtered.length, 'out of', listings.length);
     return filtered;
-  }, [listings, hiddenListings]);
+  }, [listings, purchasingListing]);
 
   const handlePurchase = async (listing) => {
     if (!isWalletConnected) {
@@ -128,12 +129,8 @@ const Market = () => {
             ]
           }, {
             onSuccess: () => {
-              console.log('Transaction successful, hiding listing:', listing.id);
-              setHiddenListings(prev => {
-                const newHidden = new Set([...prev, listing.id]);
-                console.log('Updated hiddenListings:', newHidden);
-                return newHidden;
-              });
+              console.log('Transaction successful, marking purchase:', listing.id);
+              markPurchaseInitiated(listing.id, details.transaction_uuid);
               
               alert(`Payment sent successfully!\n\nTransaction UUID: ${details.transaction_uuid}\n\nYour purchase will be completed automatically when the payment is confirmed on the blockchain. This usually takes 1-2 minutes.`);
             },
@@ -155,7 +152,7 @@ const Market = () => {
           alert('😔 Someone just purchased this item before you.\n\nPlease refresh the market and try a different character.');
           // Auto-refresh listings after race condition
           setTimeout(() => {
-            fetchListings();
+            fetchListingsEnhanced();
           }, 1000);
         } else {
           alert(result.error || 'Failed to initiate purchase');
@@ -204,7 +201,7 @@ const Market = () => {
           <div className="error-message">{error}</div>
           <button onClick={() => {
             clearError();
-            fetchListings();
+            fetchListingsEnhanced();
             fetchMyListings();
             fetchStats();
           }}>
