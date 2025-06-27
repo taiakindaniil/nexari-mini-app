@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useShop } from '../api/hooks/useShop.ts';
 import { useMarket } from '../api/hooks/useMarket.ts';
 import { useTonConnect } from '../hooks/useTonConnect.ts';
@@ -35,6 +35,7 @@ const Market = () => {
   const [sortBy, setSortBy] = useState('newest');
   const [cancellingListings, setCancellingListings] = useState(new Set());
   const [purchasingListing, setPurchasingListing] = useState(null);
+  const skipNextFetchRef = useRef(false);
 
   // Check if wallet is connected
   const isWalletConnected = !!wallet?.account?.address;
@@ -56,6 +57,12 @@ const Market = () => {
 
   // Apply filters when they change
   useEffect(() => {
+    // Skip fetch if we just initiated a purchase
+    if (skipNextFetchRef.current) {
+      skipNextFetchRef.current = false;
+      return;
+    }
+    
     const filters = {
       character_name: characterFilter,
       min_price: minPrice ? parseFloat(minPrice) : undefined,
@@ -130,18 +137,27 @@ const Market = () => {
           }, {
             onSuccess: () => {
               console.log('Transaction successful, marking purchase:', listing.id);
+              skipNextFetchRef.current = true; // Prevent automatic refetch
               markPurchaseInitiated(listing.id, details.transaction_uuid);
+              setPurchasingListing(null); // Clear purchasing state after successful transaction
+              
+              // Allow refetch after a short delay to ensure all state updates are complete
+              setTimeout(() => {
+                skipNextFetchRef.current = false;
+              }, 1000);
               
               alert(`Payment sent successfully!\n\nTransaction UUID: ${details.transaction_uuid}\n\nYour purchase will be completed automatically when the payment is confirmed on the blockchain. This usually takes 1-2 minutes.`);
             },
             onError: (error) => {
               console.error('TON transaction error:', error);
+              setPurchasingListing(null); // Clear purchasing state on error
               alert('Failed to send TON payment. The transaction reservation will expire in 15 minutes if not completed.');
             }
           });
           
         } catch (tonError) {
           console.error('TON transaction error:', tonError);
+          setPurchasingListing(null); // Clear purchasing state on error
           alert('Failed to send TON transaction. The transaction reservation will expire in 15 minutes if not completed.');
         }
       } else {
@@ -157,16 +173,16 @@ const Market = () => {
         } else {
           alert(result.error || 'Failed to initiate purchase');
         }
+        setPurchasingListing(null); // Clear purchasing state on server error
       }
     } catch (error) {
       console.error('Purchase error:', error);
+      setPurchasingListing(null); // Clear purchasing state on error
       if (error.message && error.message.includes('500')) {
         alert('Server error occurred. Please try again in a moment.');
       } else {
         alert('Failed to purchase. Please try again.');
       }
-    } finally {
-      setPurchasingListing(null);
     }
   };
 
