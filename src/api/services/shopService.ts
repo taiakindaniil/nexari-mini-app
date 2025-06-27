@@ -71,7 +71,14 @@ export interface SetActiveCharacterRequest {
 export interface SetActiveCharacterResponse {
   success: boolean;
   error?: string;
-  character?: InventoryItem;
+  active_character?: {
+    id: number;
+    name: string;
+    level: number;
+    income_rate: number;
+    image_url: string;
+  };
+  claimed_diamonds?: number;
 }
 
 export interface CaseHistoryEntry {
