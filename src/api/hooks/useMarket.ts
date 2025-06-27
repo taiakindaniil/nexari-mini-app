@@ -16,9 +16,7 @@ export const useMarket = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
+  const clearError = useCallback(() => setError(null), []);
 
   const fetchListings = useCallback(async (filters: MarketFilters = {}) => {
     try {
@@ -34,6 +32,9 @@ export const useMarket = () => {
     }
   }, [clearError]);
 
+  // Alias for backward compatibility
+  const fetchListingsEnhanced = fetchListings;
+
   const createListing = useCallback(async (request: CreateListingRequest) => {
     try {
       setLoading(true);
@@ -41,9 +42,8 @@ export const useMarket = () => {
       const result = await marketService.createListing(request);
       
       if (result.success) {
-        // Refresh listings after creating
+        // Refresh listings after successful creation
         await fetchListings();
-        await fetchMyListings();
       }
       
       return result;
@@ -71,76 +71,6 @@ export const useMarket = () => {
     }
   }, [clearError]);
 
-  // Function to immediately remove a listing from local state (for instant UI feedback)
-  const removeListingFromState = useCallback((listingId: number) => {
-    setListings(prev => prev.filter(listing => listing.id !== listingId));
-    setMyListings(prev => prev.filter(listing => listing.id !== listingId));
-  }, []);
-
-  // Function to mark a purchase as initiated (for transaction tracking)
-  const markPurchaseInitiated = useCallback((listingId: number, transactionUuid: string) => {
-    // Store initiated purchases in localStorage for persistence across page reloads
-    const initiatedPurchases = JSON.parse(localStorage.getItem('initiatedPurchases') || '{}');
-    initiatedPurchases[listingId] = {
-      transactionUuid,
-      timestamp: Date.now(),
-      expires: Date.now() + (15 * 60 * 1000) // 15 minutes
-    };
-    localStorage.setItem('initiatedPurchases', JSON.stringify(initiatedPurchases));
-    
-    // Remove from listings immediately
-    removeListingFromState(listingId);
-  }, [removeListingFromState]);
-
-  // Function to clean up expired initiated purchases
-  const cleanupExpiredPurchases = useCallback(() => {
-    const initiatedPurchases = JSON.parse(localStorage.getItem('initiatedPurchases') || '{}');
-    const now = Date.now();
-    let hasChanges = false;
-    
-    Object.keys(initiatedPurchases).forEach(listingId => {
-      if (initiatedPurchases[listingId].expires < now) {
-        delete initiatedPurchases[listingId];
-        hasChanges = true;
-      }
-    });
-    
-    if (hasChanges) {
-      localStorage.setItem('initiatedPurchases', JSON.stringify(initiatedPurchases));
-    }
-  }, []);
-
-  // Enhanced fetchListings that respects initiated purchases
-  const fetchListingsEnhanced = useCallback(async (filters: MarketFilters = {}) => {
-    try {
-      setLoading(true);
-      clearError();
-      
-      // Clean up expired purchases first
-      cleanupExpiredPurchases();
-      
-      const data = await marketService.getMarketListings(filters);
-      
-      // Filter out listings that have initiated purchases
-      const initiatedPurchases = JSON.parse(localStorage.getItem('initiatedPurchases') || '{}');
-      const filteredData = data.filter(listing => !initiatedPurchases[listing.id]);
-      
-      setListings(filteredData);
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || err?.message || 'Failed to fetch market listings');
-      console.error('Error fetching market listings:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [clearError, cleanupExpiredPurchases]);
-
-  // Function to clear a completed purchase from localStorage
-  const clearPurchaseFromStorage = useCallback((listingId: number) => {
-    const initiatedPurchases = JSON.parse(localStorage.getItem('initiatedPurchases') || '{}');
-    delete initiatedPurchases[listingId];
-    localStorage.setItem('initiatedPurchases', JSON.stringify(initiatedPurchases));
-  }, []);
-
   const completePurchase = useCallback(async (request: CompletePurchaseRequest) => {
     try {
       setLoading(true);
@@ -148,18 +78,8 @@ export const useMarket = () => {
       const result = await marketService.completePurchase(request);
       
       if (result.success) {
-        // Find and clear from localStorage using transaction_uuid
-        const initiatedPurchases = JSON.parse(localStorage.getItem('initiatedPurchases') || '{}');
-        const listingIdToRemove = Object.keys(initiatedPurchases).find(
-          listingId => initiatedPurchases[listingId].transactionUuid === request.transaction_uuid
-        );
-        
-        if (listingIdToRemove) {
-          clearPurchaseFromStorage(parseInt(listingIdToRemove));
-        }
-        
         // Refresh listings after successful purchase
-        await fetchListingsEnhanced();
+        await fetchListings();
       }
       
       return result;
@@ -171,7 +91,7 @@ export const useMarket = () => {
     } finally {
       setLoading(false);
     }
-  }, [clearError, fetchListingsEnhanced, clearPurchaseFromStorage]);
+  }, [clearError, fetchListings]);
 
   const cancelListing = useCallback(async (listingId: number) => {
     try {
@@ -192,29 +112,6 @@ export const useMarket = () => {
       return { success: false, error: errorMessage };
     }
   }, [clearError]);
-
-  const cancelListingWithRefresh = useCallback(async (listingId: number) => {
-    try {
-      setLoading(true);
-      clearError();
-      const result = await marketService.cancelListing(listingId);
-      
-      if (result.success) {
-        // Refresh listings after cancellation
-        await fetchListings();
-        await fetchMyListings();
-      }
-      
-      return result;
-    } catch (err: any) {
-      const errorMessage = err?.response?.data?.detail || err?.message || 'Failed to cancel listing';
-      setError(errorMessage);
-      console.error('Error cancelling listing:', err);
-      return { success: false, error: errorMessage };
-    } finally {
-      setLoading(false);
-    }
-  }, [clearError, fetchListings]);
 
   const fetchMyListings = useCallback(async () => {
     try {
@@ -265,7 +162,6 @@ export const useMarket = () => {
     initiatePurchase,
     completePurchase,
     cancelListing,
-    cancelListingWithRefresh,
     fetchMyListings,
     fetchStats,
     clearError,
@@ -273,10 +169,7 @@ export const useMarket = () => {
     tonToNanoTon,
     nanoTonToTon,
     formatTon,
-    removeListingFromState,
-    markPurchaseInitiated,
-    cleanupExpiredPurchases,
+    // Backward compatibility
     fetchListingsEnhanced,
-    clearPurchaseFromStorage
   };
 }; 

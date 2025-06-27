@@ -1,117 +1,44 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useShop } from '../api/hooks/useShop.ts';
 import { useMarket } from '../api/hooks/useMarket.ts';
-import { useTonConnect } from '../hooks/useTonConnect.ts';
+import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
+import { beginCell } from '@ton/ton';
+import { toUserFriendlyAddress } from '@tonconnect/ui';
 import shopService from '../api/services/shopService.ts';
-import { toUserFriendlyAddress, useTonConnectUI } from '@tonconnect/ui-react';
-import { beginCell } from '@ton/core';
 
 const Market = () => {
-  const { fetchInventory } = useShop();
-  const {
-    listings,
-    myListings,
-    loading,
-    error,
-    fetchListingsEnhanced,
-    initiatePurchase,
+  const { 
+    listings, 
+    myListings, 
+    loading, 
+    error, 
+    initiatePurchase, 
     cancelListing,
     fetchMyListings,
     fetchStats,
     clearError,
     formatTon,
-    markPurchaseInitiated,
-    cleanupExpiredPurchases
+    fetchListingsEnhanced,
   } = useMarket();
 
-  const { wallet } = useTonConnect();
+  const { fetchInventory } = useShop();
 
-  const [tonConnectUI] = useTonConnectUI();
-
-  const [activeTab, setActiveTab] = useState('browse'); // browse, my-listings
+  // Local state
+  const [activeTab, setActiveTab] = useState('browse');
   const [characterFilter, setCharacterFilter] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [sortBy, setSortBy] = useState('newest');
   const [cancellingListings, setCancellingListings] = useState(new Set());
   const [purchasingListing, setPurchasingListing] = useState(null);
-  const [initiatedPurchases, setInitiatedPurchases] = useState({});
-  const skipNextFetchRef = useRef(false);
+  const [hiddenListings, setHiddenListings] = useState(new Set()); // Simple local hiding
 
   // Check if wallet is connected
-  const isWalletConnected = !!wallet?.account?.address;
-
-  // Debug logging
-  console.log('Market component render:', {
-    listingsCount: listings.length,
-    purchasingListing
-  });
-
-  // Load initiated purchases from localStorage on mount
-  useEffect(() => {
-    const loadInitiatedPurchases = () => {
-      const stored = JSON.parse(localStorage.getItem('initiatedPurchases') || '{}');
-      setInitiatedPurchases(stored);
-    };
-    
-    loadInitiatedPurchases();
-    
-    // Listen for localStorage changes (in case of multiple tabs)
-    const handleStorageChange = (e) => {
-      if (e.key === 'initiatedPurchases') {
-        loadInitiatedPurchases();
-      }
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
-  // Periodic cleanup of expired purchases
-  useEffect(() => {
-    const interval = setInterval(() => {
-      cleanupExpiredPurchasesLocal();
-    }, 60000); // Clean up every minute
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  // Enhanced markPurchaseInitiated that also updates local state
-  const markPurchaseInitiatedLocal = (listingId, transactionUuid) => {
-    const purchaseData = {
-      transactionUuid,
-      timestamp: Date.now(),
-      expires: Date.now() + (15 * 60 * 1000) // 15 minutes
-    };
-    
-    // Update local state immediately
-    setInitiatedPurchases(prev => ({
-      ...prev,
-      [listingId]: purchaseData
-    }));
-    
-    // Also call the original function
-    markPurchaseInitiated(listingId, transactionUuid);
-  };
-
-  // Clean up expired purchases from local state
-  const cleanupExpiredPurchasesLocal = () => {
-    const now = Date.now();
-    setInitiatedPurchases(prev => {
-      const cleaned = {};
-      Object.keys(prev).forEach(listingId => {
-        if (prev[listingId].expires > now) {
-          cleaned[listingId] = prev[listingId];
-        }
-      });
-      return cleaned;
-    });
-  };
+  const tonConnectUI = useTonConnectUI()[0];
+  const isWalletConnected = useTonWallet() !== null;
 
   // Fetch data on component mount
   useEffect(() => {
-    cleanupExpiredPurchases(); // Clean up expired purchases on mount
-    cleanupExpiredPurchasesLocal(); // Also clean up local state
     fetchListingsEnhanced();
     fetchMyListings();
     fetchStats();
@@ -120,34 +47,25 @@ const Market = () => {
 
   // Apply filters when they change
   useEffect(() => {
-    // Skip fetch if we just initiated a purchase
-    if (skipNextFetchRef.current) {
-      skipNextFetchRef.current = false;
-      return;
-    }
-    
     const filters = {
       character_name: characterFilter,
       min_price: minPrice ? parseFloat(minPrice) : undefined,
       max_price: maxPrice ? parseFloat(maxPrice) : undefined,
       sort_by: sortBy
     };
-    console.log('Applying filters, current purchasingListing:', purchasingListing);
     fetchListingsEnhanced(filters);
   }, [characterFilter, minPrice, maxPrice, sortBy, fetchListingsEnhanced]);
 
-  // Memoize filtered listings to preserve purchasingListing filter and initiated purchases
+  // Memoize filtered listings to preserve purchasingListing and hiddenListings filter
   const visibleListings = useMemo(() => {
     const filtered = listings.filter(listing => {
       const isPurchasing = purchasingListing === listing.id;
-      const isInitiated = !!initiatedPurchases[listing.id];
+      const isHidden = hiddenListings.has(listing.id);
       
-      console.log(`Listing ${listing.id} (${listing.character.name}): purchasing=${isPurchasing}, initiated=${isInitiated}`);
-      return !isPurchasing && !isInitiated;
+      return !isPurchasing && !isHidden;
     });
-    console.log('Visible listings count:', filtered.length, 'out of', listings.length);
     return filtered;
-  }, [listings, purchasingListing, initiatedPurchases]);
+  }, [listings, purchasingListing, hiddenListings]);
 
   const handlePurchase = async (listing) => {
     if (!isWalletConnected) {
@@ -187,7 +105,7 @@ const Market = () => {
         try {
           // Send TON transaction with UUID in payload for monitoring
           await tonConnectUI.sendTransaction({
-            validUntil: Date.now() + 15 * 60 * 1000, // 15 minutes
+            validUntil: Date.now() + 3 * 60 * 1000, // 3 minutes
             messages: [
               {
                 address: toUserFriendlyAddress(listing.wallet_address),
@@ -201,29 +119,23 @@ const Market = () => {
             ]
           }, {
             onSuccess: () => {
-              console.log('Transaction successful, marking purchase:', listing.id);
-              skipNextFetchRef.current = true; // Prevent automatic refetch
-              markPurchaseInitiatedLocal(listing.id, details.transaction_uuid);
+              console.log('Transaction successful, hiding listing:', listing.id);
+              setHiddenListings(prev => new Set([...prev, listing.id]));
               setPurchasingListing(null); // Clear purchasing state after successful transaction
-              
-              // Allow refetch after a short delay to ensure all state updates are complete
-              setTimeout(() => {
-                skipNextFetchRef.current = false;
-              }, 1000);
               
               alert(`Payment sent successfully!\n\nTransaction UUID: ${details.transaction_uuid}\n\nYour purchase will be completed automatically when the payment is confirmed on the blockchain. This usually takes 1-2 minutes.`);
             },
             onError: (error) => {
               console.error('TON transaction error:', error);
               setPurchasingListing(null); // Clear purchasing state on error
-              alert('Failed to send TON payment. The transaction reservation will expire in 15 minutes if not completed.');
+              alert('Failed to send TON payment. The transaction reservation will expire in 3 minutes if not completed.');
             }
           });
           
         } catch (tonError) {
           console.error('TON transaction error:', tonError);
           setPurchasingListing(null); // Clear purchasing state on error
-          alert('Failed to send TON transaction. The transaction reservation will expire in 15 minutes if not completed.');
+          alert('Failed to send TON transaction. The transaction reservation will expire in 3 minutes if not completed.');
         }
       } else {
         // Handle server errors with better messages for race conditions
