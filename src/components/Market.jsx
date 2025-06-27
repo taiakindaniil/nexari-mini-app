@@ -35,6 +35,7 @@ const Market = () => {
   const [sortBy, setSortBy] = useState('newest');
   const [cancellingListings, setCancellingListings] = useState(new Set());
   const [purchasingListing, setPurchasingListing] = useState(null);
+  const [initiatedPurchases, setInitiatedPurchases] = useState({});
   const skipNextFetchRef = useRef(false);
 
   // Check if wallet is connected
@@ -46,9 +47,71 @@ const Market = () => {
     purchasingListing
   });
 
+  // Load initiated purchases from localStorage on mount
+  useEffect(() => {
+    const loadInitiatedPurchases = () => {
+      const stored = JSON.parse(localStorage.getItem('initiatedPurchases') || '{}');
+      setInitiatedPurchases(stored);
+    };
+    
+    loadInitiatedPurchases();
+    
+    // Listen for localStorage changes (in case of multiple tabs)
+    const handleStorageChange = (e) => {
+      if (e.key === 'initiatedPurchases') {
+        loadInitiatedPurchases();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Periodic cleanup of expired purchases
+  useEffect(() => {
+    const interval = setInterval(() => {
+      cleanupExpiredPurchasesLocal();
+    }, 60000); // Clean up every minute
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // Enhanced markPurchaseInitiated that also updates local state
+  const markPurchaseInitiatedLocal = (listingId, transactionUuid) => {
+    const purchaseData = {
+      transactionUuid,
+      timestamp: Date.now(),
+      expires: Date.now() + (15 * 60 * 1000) // 15 minutes
+    };
+    
+    // Update local state immediately
+    setInitiatedPurchases(prev => ({
+      ...prev,
+      [listingId]: purchaseData
+    }));
+    
+    // Also call the original function
+    markPurchaseInitiated(listingId, transactionUuid);
+  };
+
+  // Clean up expired purchases from local state
+  const cleanupExpiredPurchasesLocal = () => {
+    const now = Date.now();
+    setInitiatedPurchases(prev => {
+      const cleaned = {};
+      Object.keys(prev).forEach(listingId => {
+        if (prev[listingId].expires > now) {
+          cleaned[listingId] = prev[listingId];
+        }
+      });
+      return cleaned;
+    });
+  };
+
   // Fetch data on component mount
   useEffect(() => {
     cleanupExpiredPurchases(); // Clean up expired purchases on mount
+    cleanupExpiredPurchasesLocal(); // Also clean up local state
     fetchListingsEnhanced();
     fetchMyListings();
     fetchStats();
@@ -73,16 +136,18 @@ const Market = () => {
     fetchListingsEnhanced(filters);
   }, [characterFilter, minPrice, maxPrice, sortBy, fetchListingsEnhanced]);
 
-  // Memoize filtered listings to preserve purchasingListing filter
+  // Memoize filtered listings to preserve purchasingListing filter and initiated purchases
   const visibleListings = useMemo(() => {
     const filtered = listings.filter(listing => {
       const isPurchasing = purchasingListing === listing.id;
-      console.log(`Listing ${listing.id} (${listing.character.name}): purchasing=${isPurchasing}`);
-      return !isPurchasing;
+      const isInitiated = !!initiatedPurchases[listing.id];
+      
+      console.log(`Listing ${listing.id} (${listing.character.name}): purchasing=${isPurchasing}, initiated=${isInitiated}`);
+      return !isPurchasing && !isInitiated;
     });
     console.log('Visible listings count:', filtered.length, 'out of', listings.length);
     return filtered;
-  }, [listings, purchasingListing]);
+  }, [listings, purchasingListing, initiatedPurchases]);
 
   const handlePurchase = async (listing) => {
     if (!isWalletConnected) {
@@ -138,7 +203,7 @@ const Market = () => {
             onSuccess: () => {
               console.log('Transaction successful, marking purchase:', listing.id);
               skipNextFetchRef.current = true; // Prevent automatic refetch
-              markPurchaseInitiated(listing.id, details.transaction_uuid);
+              markPurchaseInitiatedLocal(listing.id, details.transaction_uuid);
               setPurchasingListing(null); // Clear purchasing state after successful transaction
               
               // Allow refetch after a short delay to ensure all state updates are complete
