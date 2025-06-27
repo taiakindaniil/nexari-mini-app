@@ -13,6 +13,8 @@ import shopService from './services/shopService';
 import type { CaseData, InventoryItem, CaseReward, PurchaseCaseRequest, PurchaseCaseResponse, CaseHistoryEntry, CaseDetails } from './services/shopService';
 import questService from './services/questService';
 import type { Quest, QuestListResponse, QuestClaimResponse, QuestProgressRequest } from './services/questService';
+import referralService from './services/referralService';
+import type { ReferralStats, ReferralUser, ReferralListResponse, ClaimRewardsResponse } from './services/referralService';
 
 // Export services
 export {
@@ -37,6 +39,9 @@ export {
   
   // Quest service
   questService,
+  
+  // Referral service
+  referralService,
   
   // Hooks
   useApi,
@@ -83,6 +88,12 @@ export type {
   QuestListResponse,
   QuestClaimResponse,
   QuestProgressRequest,
+  
+  // Referral types
+  ReferralStats,
+  ReferralUser,
+  ReferralListResponse,
+  ClaimRewardsResponse,
 };
 
 // Create a single API object that contains all services
