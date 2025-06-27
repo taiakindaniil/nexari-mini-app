@@ -96,7 +96,7 @@ const SellModal = React.memo(({
 });
 
 export default function Shop() {
-  const { gameStatus, fetchGameStatus } = useGame();
+  const { gameStatus, fetchGameStatus, setActiveCharacter: gameSetActiveCharacter } = useGame();
   const {
     cases,
     inventory,
@@ -178,6 +178,12 @@ export default function Shop() {
     try {
       const result = await setActiveCharacter(character.id);
       if (result.success) {
+        // Also update the game context with the new active character
+        if (gameSetActiveCharacter) {
+          // This will update the main screen immediately
+          await gameSetActiveCharacter(character.id);
+        }
+        
         alert(`${character.character_name || character.name} is now the active character!`);
       } else {
         alert(result.error || 'Error setting active character');

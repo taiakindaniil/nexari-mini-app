@@ -146,7 +146,18 @@ export const useShop = (): UseShopReturn => {
       
       // Refresh inventory after successful activation
       if (result.success) {
-        await fetchInventory();
+        // Immediately update local inventory state to reflect the change
+        setInventory(prevInventory => 
+          prevInventory.map(item => ({
+            ...item,
+            is_active: item.id === characterId
+          }))
+        );
+        
+        // Still refresh inventory in background for consistency
+        fetchInventory().catch(err => {
+          console.warn('Background inventory refresh failed:', err);
+        });
       }
       
       return result;

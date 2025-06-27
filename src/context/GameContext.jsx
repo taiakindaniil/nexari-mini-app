@@ -156,7 +156,24 @@ export const GameProvider = ({ children }) => {
       
       const response = await api.character.setActiveCharacter(userCharacterId);
       if (response.success) {
-        await fetchGameStatus(); // Refresh status to show new character and updated balance
+        // Immediately update the gameStatus with the new active character
+        if (response.active_character) {
+          setGameStatus(prevStatus => ({
+            ...prevStatus,
+            active_character: response.active_character,
+            // Update income rate if provided
+            income_rate: response.active_character.income_rate || prevStatus.income_rate,
+            // Add claimed diamonds to balance if any
+            diamonds_balance: response.claimed_diamonds 
+              ? (prevStatus.diamonds_balance || 0) + response.claimed_diamonds 
+              : (prevStatus.diamonds_balance || 0)
+          }));
+        }
+        
+        // Still refresh status in background for consistency, but don't await it
+        fetchGameStatus().catch(err => {
+          console.warn('Background refresh failed:', err);
+        });
         
         // Show notification if diamonds were automatically claimed
         if (response.claimed_diamonds && response.claimed_diamonds > 0) {
