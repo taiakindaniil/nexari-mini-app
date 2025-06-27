@@ -302,7 +302,7 @@ export default function Quests() {
                 </div>
                 <button 
                   onClick={() => {
-                    const inviteLink = referralData?.stats.invite_link || `https://t.me/nexari_bot?start=ref_${player.username || player.telegramId || 'ref123'}`;
+                    const inviteLink = referralData?.stats.invite_link || `https://t.me/nexari_app_bot?start=ref_${player.username || player.telegramId || 'ref123'}`;
                     navigator.clipboard.writeText(inviteLink).then(() => {
                       showNotification('Invite link copied!');
                     });
