@@ -105,7 +105,7 @@ const Market = () => {
         try {
           // Send TON transaction with UUID in payload for monitoring
           await tonConnectUI.sendTransaction({
-            validUntil: Date.now() + 3 * 60 * 1000, // 3 minutes
+            validUntil: Date.now() + 5 * 60 * 1000, // 5 minutes
             messages: [
               {
                 address: toUserFriendlyAddress(listing.wallet_address),
@@ -128,14 +128,14 @@ const Market = () => {
             onError: (error) => {
               console.error('TON transaction error:', error);
               setPurchasingListing(null); // Clear purchasing state on error
-              alert('Failed to send TON payment. The transaction reservation will expire in 3 minutes if not completed.');
+              alert('Failed to send TON payment. The transaction reservation will expire in 5 minutes if not completed.');
             }
           });
           
         } catch (tonError) {
           console.error('TON transaction error:', tonError);
           setPurchasingListing(null); // Clear purchasing state on error
-          alert('Failed to send TON transaction. The transaction reservation will expire in 3 minutes if not completed.');
+          alert('Failed to send TON transaction. The transaction reservation will expire in 5 minutes if not completed.');
         }
       } else {
         // Handle server errors with better messages for race conditions
